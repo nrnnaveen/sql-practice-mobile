@@ -1,73 +1,83 @@
-from flask import Flask,render_template,request,redirect,session
+from flask import Flask, render_template, request, redirect, session
+from auth import create_user, login_user
+from mysql_engine import run_mysql
+from postgres_engine import run_postgres
+from config import SECRET_KEY
 
-from auth import create_user,check_login
-from mysql_engine import run_query as mysql_query
-from postgres_engine import run_query as pg_query
+app = Flask(__name__)
+app.secret_key = SECRET_KEY
 
-app=Flask(__name__)
-app.secret_key="sqlpractice"
 
 @app.route("/")
 def home():
-    return render_template("login.html")
+    return redirect("/login")
 
 
-@app.route("/signup",methods=["GET","POST"])
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
 
-    if request.method=="POST":
+    if request.method == "POST":
 
-        email=request.form["email"]
-        password=request.form["password"]
+        email = request.form["email"]
+        password = request.form["password"]
 
-        create_user(email,password)
-
-        return redirect("/")
+        if create_user(email, password):
+            return redirect("/login")
 
     return render_template("signup.html")
 
 
-@app.route("/login",methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
 
-    email=request.form["email"]
-    password=request.form["password"]
+    if request.method == "POST":
 
-    if check_login(email,password):
+        email = request.form["email"]
+        password = request.form["password"]
 
-        session["user"]=email
-        return redirect("/dashboard")
+        user = login_user(email, password)
 
-    return "Login failed"
+        if user:
+            session["user"] = email
+            return redirect("/dashboard")
+
+    return render_template("login.html")
 
 
 @app.route("/dashboard")
 def dashboard():
 
     if "user" not in session:
-        return redirect("/")
+        return redirect("/login")
 
     return render_template("dashboard.html")
 
 
-@app.route("/editor",methods=["GET","POST"])
+@app.route("/editor", methods=["GET", "POST"])
 def editor():
 
-    columns=[]
-    rows=[]
+    result = None
 
-    if request.method=="POST":
+    if request.method == "POST":
 
-        db=request.form["database"]
-        query=request.form["query"]
+        db = request.form["database"]
+        query = request.form["query"]
 
-        if db=="mysql":
-            columns,rows=mysql_query(query)
+        if db == "mysql":
+            result = run_mysql(query)
 
-        if db=="postgres":
-            columns,rows=pg_query(query)
+        elif db == "postgres":
+            result = run_postgres(query)
 
-    return render_template("editor.html",columns=columns,rows=rows)
+    return render_template("editor.html", result=result)
 
 
-app.run(host="0.0.0.0",port=5000)
+@app.route("/logout")
+def logout():
+
+    session.clear()
+    return redirect("/login")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
