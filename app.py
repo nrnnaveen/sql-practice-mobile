@@ -94,10 +94,21 @@ def editor():
 
     result = None
 
+    # initialize query history
+    if "history" not in session:
+        session["history"] = []
+
     if request.method == "POST":
 
         db = request.form["database"]
         query = request.form["query"]
+
+        # save query to history
+        history = session["history"]
+        history.insert(0, query)
+
+        # keep only last 10 queries
+        session["history"] = history[:10]
 
         if db == "mysql":
             result = run_mysql(query)
@@ -105,7 +116,11 @@ def editor():
         elif db == "postgres":
             result = run_postgres(query)
 
-    return render_template("editor.html", result=result)
+    return render_template(
+        "editor.html",
+        result=result,
+        history=session.get("history", [])
+    )
 
 
 @app.route("/logout")
