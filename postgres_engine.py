@@ -1,20 +1,32 @@
 import psycopg2
 from config import POSTGRES_CONFIG
 
-def run_query(query):
+def run_postgres(query):
 
-    conn=psycopg2.connect(**POSTGRES_CONFIG)
-    cursor=conn.cursor()
+    try:
+        conn = psycopg2.connect(**POSTGRES_CONFIG)
+        cursor = conn.cursor()
 
-    cursor.execute(query)
+        cursor.execute(query)
 
-    if query.lower().startswith("select"):
+        if query.strip().lower().startswith("select"):
 
-        columns=[desc[0] for desc in cursor.description]
-        rows=cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]
+            rows = cursor.fetchall()
 
-        return columns,rows
+            result = {
+                "columns": columns,
+                "rows": rows
+            }
 
-    conn.commit()
+        else:
+            conn.commit()
+            result = {"message": "Query executed successfully"}
 
-    return [],[]
+        cursor.close()
+        conn.close()
+
+        return result
+
+    except Exception as e:
+        return {"error": str(e)}
