@@ -3,10 +3,43 @@ from auth import create_user, login_user
 from mysql_engine import run_mysql
 from postgres_engine import run_postgres
 from config import SECRET_KEY
+import sqlite3
+import os
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
+
+# -----------------------------
+# Create database automatically
+# -----------------------------
+if not os.path.exists("database"):
+    os.makedirs("database")
+
+db_path = "database/users.db"
+
+if not os.path.exists(db_path):
+
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE,
+        password TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+    print("Users database created")
+
+
+# -----------------------------
+# Routes
+# -----------------------------
 
 @app.route("/")
 def home():
@@ -56,6 +89,9 @@ def dashboard():
 @app.route("/editor", methods=["GET", "POST"])
 def editor():
 
+    if "user" not in session:
+        return redirect("/login")
+
     result = None
 
     if request.method == "POST":
@@ -79,5 +115,8 @@ def logout():
     return redirect("/login")
 
 
+# -----------------------------
+# Run App
+# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)
