@@ -1,85 +1,142 @@
-body{
-font-family:Arial, sans-serif;
-background:#f4f6f9;
-margin:0;
-padding:0;
+/* General body styles */
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+  padding: 0;
 }
 
-.container{
-width:95%;
-max-width:600px;
-margin:auto;
-margin-top:30px;
+/* Container for pages */
+.container {
+  width: 95%;
+  max-width: 800px;
+  margin: auto;
+  margin-top: 20px;
+  padding: 0 10px;
 }
 
-.card{
-background:white;
-padding:20px;
-border-radius:8px;
-box-shadow:0 2px 8px rgba(0,0,0,0.1);
-margin-bottom:20px;
+/* Card style */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
 }
 
-h2,h3{
-text-align:center;
+/* Headings */
+h2, h3, h4 {
+  text-align: center;
+  margin-top: 0;
 }
 
-input,select,textarea{
-width:100%;
-padding:10px;
-margin-top:10px;
-margin-bottom:10px;
-border:1px solid #ccc;
-border-radius:5px;
-font-size:14px;
+/* Inputs, selects, textareas */
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
-button{
-width:100%;
-padding:12px;
-background:#007bff;
-border:none;
-color:white;
-font-size:16px;
-border-radius:5px;
-cursor:pointer;
+/* Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  background: #007bff;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-button:hover{
-background:#0056b3;
+button:hover {
+  background: #0056b3;
 }
 
-table{
-width:100%;
-border-collapse:collapse;
-margin-top:20px;
-background:white;
+/* Links */
+a {
+  text-decoration: none;
+  color: #007bff;
+  display: block;
+  margin-top: 10px;
+  text-align: center;
 }
 
-th,td{
-border:1px solid #ddd;
-padding:8px;
-text-align:left;
-font-size:13px;
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: white;
+  overflow-x: auto;
 }
 
-th{
-background:#007bff;
-color:white;
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  font-size: 13px;
 }
 
-a{
-text-decoration:none;
-color:#007bff;
-display:block;
-margin-top:10px;
-text-align:center;
+th {
+  background: #007bff;
+  color: white;
 }
 
-.navbar{
-background:#343a40;
-color:white;
-padding:12px;
-text-align:center;
-font-size:18px;
+/* Layout for SQL editor page */
+.layout {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.sidebar {
+  width: 200px;
+  min-width: 150px;
+}
+
+#editor {
+  height: 320px;
+  border: 1px solid #ccc;
+  margin-top: 10px;
+}
+
+/* Query history items */
+.history-item {
+  padding: 6px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.history-item:hover {
+  background: #f3f3f3;
+}
+
+/* Navbar style */
+.navbar {
+  background: #343a40;
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+  }
+  #editor {
+    height: 250px;
+  }
 }
