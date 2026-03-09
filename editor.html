@@ -1,32 +1,90 @@
-<h3>SQL Editor</h3>
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>SQL Editor</title>
+
+<link rel="stylesheet" href="/static/style.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h3>Run SQL Query</h3>
 
 <form method="post">
 
 <select name="database">
+
 <option value="mysql">MySQL</option>
+
 <option value="postgres">PostgreSQL</option>
+
 </select>
 
-<textarea name="query" rows="6" cols="60"></textarea>
+<textarea name="query" rows="6" placeholder="Write SQL here"></textarea>
 
-<button>Run</button>
+<button>Run Query</button>
 
 </form>
 
-<table border="1">
+</div>
+
+{% if result %}
+
+<div class="card">
+
+{% if result.error %}
+
+<p>{{ result.error }}</p>
+
+{% elif result.columns %}
+
+<table>
 
 <tr>
-{% for c in columns %}
-<th>{{c}}</th>
+
+{% for col in result.columns %}
+
+<th>{{ col }}</th>
+
 {% endfor %}
+
 </tr>
 
-{% for r in rows %}
+{% for row in result.rows %}
+
 <tr>
-{% for v in r %}
-<td>{{v}}</td>
+
+{% for item in row %}
+
+<td>{{ item }}</td>
+
 {% endfor %}
+
 </tr>
+
 {% endfor %}
 
 </table>
+
+{% else %}
+
+<p>{{ result.message }}</p>
+
+{% endif %}
+
+</div>
+
+{% endif %}
+
+</div>
+
+</body>
+
+</html>
