@@ -1,33 +1,39 @@
 import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
 
-DB="database/users.db"
+DB = "database/users.db"
 
-def create_user(email,password):
+def create_user(email, password):
 
-    conn=sqlite3.connect(DB)
-    cur=conn.cursor()
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
 
-    cur.execute(
-    "INSERT INTO users(email,password) VALUES (?,?)",
-    (email,generate_password_hash(password))
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def check_login(email,password):
-
-    conn=sqlite3.connect(DB)
-    cur=conn.cursor()
-
-    cur.execute("SELECT password FROM users WHERE email=?",(email,))
-    user=cur.fetchone()
-
-    conn.close()
-
-    if user and check_password_hash(user[0],password):
+    try:
+        cur.execute(
+            "INSERT INTO users(email,password) VALUES (?,?)",
+            (email, password)
+        )
+        conn.commit()
         return True
 
-    return False
+    except:
+        return False
+
+    finally:
+        conn.close()
+
+
+def login_user(email, password):
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM users WHERE email=? AND password=?",
+        (email, password)
+    )
+
+    user = cur.fetchone()
+
+    conn.close()
+
+    return user
