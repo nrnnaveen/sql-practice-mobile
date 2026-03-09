@@ -1,0 +1,32 @@
+<h3>SQL Editor</h3>
+
+<form method="post">
+
+<select name="database">
+<option value="mysql">MySQL</option>
+<option value="postgres">PostgreSQL</option>
+</select>
+
+<textarea name="query" rows="6" cols="60"></textarea>
+
+<button>Run</button>
+
+</form>
+
+<table border="1">
+
+<tr>
+{% for c in columns %}
+<th>{{c}}</th>
+{% endfor %}
+</tr>
+
+{% for r in rows %}
+<tr>
+{% for v in r %}
+<td>{{v}}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+
+</table>
