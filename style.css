@@ -4,13 +4,16 @@ body {
   background: #f4f6f9;
   margin: 0;
   padding: 0;
+  -webkit-user-select: none; /* prevent accidental text selection */
+  -ms-touch-action: pan-y; /* allow vertical scroll only on mobile */
+  touch-action: pan-y;
 }
 
 .container {
   width: 95%;
-  max-width: 1000px; /* allow bigger on desktop but still responsive */
+  max-width: 600px; /* mobile-friendly width */
   margin: auto;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .card {
@@ -18,27 +21,28 @@ body {
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
-h2, h3 {
+h2, h3, h4 {
   text-align: center;
+  margin-bottom: 10px;
 }
 
 input, select, textarea {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin-top: 10px;
   margin-bottom: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 14px;
+  font-size: 16px;
   box-sizing: border-box;
 }
 
 button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background: #007bff;
   border: none;
   color: white;
@@ -56,13 +60,13 @@ table {
   border-collapse: collapse;
   margin-top: 15px;
   background: white;
+  font-size: 14px;
 }
 
 th, td {
   border: 1px solid #ddd;
-  padding: 8px;
+  padding: 10px;
   text-align: left;
-  font-size: 13px;
 }
 
 th {
@@ -89,20 +93,20 @@ a {
 /* ------------------ Layout ------------------ */
 .layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* stack everything vertically for mobile */
   gap: 10px;
 }
 
 .sidebar {
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
 .history-item {
-  padding: 6px;
+  padding: 8px;
   border-bottom: 1px solid #eee;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .history-item:hover {
@@ -112,18 +116,23 @@ a {
 /* ------------------ Editor ------------------ */
 #editor {
   width: 100%;
-  height: 300px;
+  height: 250px; /* default mobile-friendly height */
   border: 1px solid #ccc;
   border-radius: 5px;
 }
 
 /* ------------------ Media Queries ------------------ */
 @media (min-width: 768px) {
+  .container {
+    max-width: 900px;
+  }
   .layout {
-    flex-direction: row;
+    flex-direction: row; /* side by side for desktop */
+    gap: 15px;
   }
   .sidebar {
-    width: 200px;
+    width: 220px;
+    max-height: none;
   }
   #editor {
     height: 400px;
