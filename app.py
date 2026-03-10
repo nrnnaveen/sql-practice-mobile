@@ -9,14 +9,10 @@ import os
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
-# -----------------------------
-# Create SQLite database for users
-# -----------------------------
+# Create local SQLite users database automatically
 if not os.path.exists("database"):
     os.makedirs("database")
-
 db_path = "database/users.db"
-
 if not os.path.exists(db_path):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
@@ -29,11 +25,8 @@ if not os.path.exists(db_path):
     """)
     conn.commit()
     conn.close()
-    print("Users database created")
 
-# -----------------------------
 # Routes
-# -----------------------------
 @app.route("/")
 def home():
     return redirect("/login")
@@ -52,8 +45,7 @@ def login():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-        user = login_user(email, password)
-        if user:
+        if login_user(email, password):
             session["user"] = email
             return redirect("/dashboard")
     return render_template("login.html")
@@ -70,16 +62,12 @@ def editor():
         return redirect("/login")
 
     result = None
-
-    # initialize query history
     if "history" not in session:
         session["history"] = []
 
     if request.method == "POST":
         db = request.form["database"]
         query = request.form["query"]
-
-        # save query to history (last 10 queries)
         history = session["history"]
         history.insert(0, query)
         session["history"] = history[:10]
@@ -102,8 +90,7 @@ def logout():
     session.clear()
     return redirect("/login")
 
-# -----------------------------
-# Run App
-# -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
