@@ -1,6 +1,4 @@
 Flask
-flask-login
 mysql-connector-python
 psycopg2-binary
-werkzeug
-Gunicorn
+Werkzeug
