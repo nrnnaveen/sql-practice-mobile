@@ -1,0 +1,123 @@
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Layout helpers ── */
+.container {
+    width: 100%;
+    max-width: 960px;
+    padding: 1rem;
+}
+
+.layout {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ── Card ── */
+.card {
+    background: #313244;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+    width: 180px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { padding: 4px 0; font-size: 0.85rem; color: #a6e3a1; }
+
+/* ── Typography ── */
+h2 { font-size: 1.5rem; margin-bottom: 1rem; color: #cba6f7; }
+h4 { font-size: 1rem; margin-bottom: 0.5rem; color: #89b4fa; }
+
+/* ── Form elements ── */
+input, select, textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.75rem;
+    background: #45475a;
+    border: 1px solid #585b70;
+    border-radius: 6px;
+    color: #cdd6f4;
+    font-size: 0.95rem;
+}
+
+input::placeholder { color: #7f849c; }
+
+/* ── Buttons ── */
+button {
+    display: inline-block;
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover { background: #b4befe; }
+
+/* ── Links ── */
+a { color: #89dceb; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Table ── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+th, td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #585b70;
+    text-align: left;
+}
+
+th { background: #45475a; color: #cba6f7; }
+tr:nth-child(even) { background: #3d3f52; }
+
+/* ── Query history ── */
+.history-item {
+    background: #45475a;
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-item:hover { background: #585b70; }
+
+/* ── Error messages ── */
+.error { color: #f38ba8; font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+/* ── Utility ── */
+.text-center { text-align: center; }
+.mt-sm { margin-top: 0.5rem; }
+.mt-md { margin-top: 1rem; }
