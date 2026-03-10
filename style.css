@@ -5,13 +5,14 @@ body {
   margin: 0;
   padding: 0;
   -webkit-user-select: none; /* prevent accidental text selection */
-  -ms-touch-action: pan-y; /* allow vertical scroll only on mobile */
+  -ms-touch-action: pan-y; /* allow vertical scroll only */
   touch-action: pan-y;
+  overflow-x: hidden; /* prevent horizontal scroll */
 }
 
 .container {
   width: 95%;
-  max-width: 600px; /* mobile-friendly width */
+  max-width: 600px; /* mobile-first width */
   margin: auto;
   margin-top: 15px;
 }
@@ -93,13 +94,16 @@ a {
 /* ------------------ Layout ------------------ */
 .layout {
   display: flex;
-  flex-direction: column; /* stack everything vertically for mobile */
+  flex-direction: column; /* stack vertically on mobile */
   gap: 10px;
 }
 
 .sidebar {
   max-height: 200px;
   overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 8px;
 }
 
 .history-item {
@@ -116,7 +120,7 @@ a {
 /* ------------------ Editor ------------------ */
 #editor {
   width: 100%;
-  height: 250px; /* default mobile-friendly height */
+  height: 250px; /* mobile-friendly */
   border: 1px solid #ccc;
   border-radius: 5px;
 }
@@ -127,14 +131,19 @@ a {
     max-width: 900px;
   }
   .layout {
-    flex-direction: row; /* side by side for desktop */
+    flex-direction: column; /* keep stacked layout for SQL Playground */
     gap: 15px;
   }
   .sidebar {
-    width: 220px;
-    max-height: none;
+    max-height: 300px;
   }
   #editor {
-    height: 400px;
+    height: 350px;
   }
+}
+
+/* ------------------ Touch Zoom Prevention ------------------ */
+html, body {
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
 }
