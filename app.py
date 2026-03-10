@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 # -----------------------------
-# Create database automatically
+# Create SQLite database for users
 # -----------------------------
 if not os.path.exists("database"):
     os.makedirs("database")
@@ -79,10 +79,10 @@ def editor():
         db = request.form["database"]
         query = request.form["query"]
 
-        # save query to history
+        # save query to history (last 10 queries)
         history = session["history"]
         history.insert(0, query)
-        session["history"] = history[:10]  # last 10 queries
+        session["history"] = history[:10]
 
         if db == "mysql":
             result = run_mysql(query)
