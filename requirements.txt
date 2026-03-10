@@ -2,3 +2,4 @@ Flask
 mysql-connector-python
 psycopg2-binary
 Werkzeug
+gunicorn
