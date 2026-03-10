@@ -9,82 +9,79 @@
 <body>
 <div class="container">
 
-<h2>SQL Playground</h2>
+  <div class="editor-header">
+    <h2>SQL Playground</h2>
+    <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+  </div>
 
-<div class="layout">
+  <div class="editor-layout">
 
-  <!-- TABLE EXPLORER -->
-  <div class="sidebar card">
-    <h4>Tables</h4>
-    <ul>
-      {% if request.form.get('database') == 'postgres' %}
-        {% for table in get_postgres_tables() %}
-        <li>{{ table }}</li>
+    <!-- LEFT: Editor + Output -->
+    <div class="editor-main">
+
+      <!-- SQL EDITOR -->
+      <div class="card">
+        <form method="post" onsubmit="saveQuery()">
+          <select name="database" id="db-select">
+            <option value="mysql" {% if selected_db == 'mysql' %}selected{% endif %}>MySQL</option>
+            <option value="postgres" {% if selected_db == 'postgres' %}selected{% endif %}>PostgreSQL</option>
+          </select>
+
+          <div id="editor" class="monaco-editor-box"></div>
+          <textarea name="query" id="query" hidden></textarea>
+
+          <button type="submit">&#9654; Run Query</button>
+        </form>
+      </div>
+
+      <!-- QUERY RESULT -->
+      <div id="output-section">
+        {% if result %}
+        <div class="card">
+          {% if result.error %}
+            <p class="error">&#10006; {{ result.error }}</p>
+          {% elif result.columns %}
+            <div class="table-scroll">
+            <table>
+              <tr>
+                {% for col in result.columns %}
+                <th>{{ col }}</th>
+                {% endfor %}
+              </tr>
+              {% for row in result.rows %}
+              <tr>
+                {% for item in row %}
+                <td>{{ item }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </table>
+            </div>
+          {% else %}
+            <p>&#10003; {{ result.message }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+    </div><!-- /editor-main -->
+
+    <!-- RIGHT: Query History -->
+    <div class="history-panel card">
+      <h4>Query History</h4>
+      {% if history %}
+        {% for item in history %}
+        <div class="history-item" onclick="loadQuery({{ item.query | tojson }})">
+          <span class="history-db">{{ item.db_type }}</span>
+          {{ item.query }}
+        </div>
         {% endfor %}
       {% else %}
-        {% for table in get_mysql_tables() %}
-        <li>{{ table }}</li>
-        {% endfor %}
+        <p class="history-empty">No history yet.</p>
       {% endif %}
-    </ul>
-  </div>
-
-  <!-- SQL EDITOR -->
-  <div style="flex:1">
-    <div class="card">
-      <form method="post" onsubmit="saveQuery()">
-        <select name="database">
-          <option value="mysql" {% if request.form.get('database')=='mysql' %}selected{% endif %}>MySQL</option>
-          <option value="postgres" {% if request.form.get('database')=='postgres' %}selected{% endif %}>PostgreSQL</option>
-        </select>
-
-        <div id="editor" style="height:200px;"></div>
-        <textarea name="query" id="query" hidden></textarea>
-
-        <button type="submit">Run Query</button>
-      </form>
     </div>
-  </div>
 
-  <!-- QUERY HISTORY -->
-  <div class="sidebar card">
-    <h4>History</h4>
-    {% for q in history %}
-    <div class="history-item" onclick="loadQuery(`{{ q }}`)">
-      {{ q }}
-    </div>
-    {% endfor %}
-  </div>
-
-</div>
-
-<!-- QUERY RESULT -->
-{% if result %}
-<div class="card">
-  {% if result.error %}
-    <p style="color:red;">{{ result.error }}</p>
-  {% elif result.columns %}
-    <div class="table-scroll">
-    <table>
-      <tr>
-        {% for col in result.columns %}
-        <th>{{ col }}</th>
-        {% endfor %}
-      </tr>
-      {% for row in result.rows %}
-      <tr>
-        {% for item in row %}
-        <td>{{ item }}</td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-    </div>
-  {% else %}
-    <p>{{ result.message }}</p>
-  {% endif %}
-</div>
-{% endif %}
+  </div><!-- /editor-layout -->
 
 </div>
 
@@ -98,18 +95,23 @@ require(["vs/editor/editor.main"], function(){
     value:{{ last_query | tojson }},
     language:"sql",
     theme:"vs-dark",
-    automaticLayout:true
+    automaticLayout:true,
+    minimap:{enabled:false},
+    fontSize:14,
+    lineNumbers:"on",
+    wordWrap:"on"
   });
 });
 
 function saveQuery(){
-  document.getElementById("query").value = editor.getValue();
+  document.getElementById("query").value = editor ? editor.getValue() : "";
 }
 
 function loadQuery(q){
-  editor.setValue(q);
+  if(editor){ editor.setValue(q); }
 }
 </script>
 
 </body>
 </html>
+

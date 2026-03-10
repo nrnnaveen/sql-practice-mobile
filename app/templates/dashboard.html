@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SQL Practice Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -8,15 +10,16 @@
 
 <div class="container">
 
+    <div class="editor-header">
+        <h2>SQL Practice</h2>
+        <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    </div>
+
     <div class="card" style="text-align:center;">
-        <h2>SQL Practice Dashboard</h2>
+        <h2>Welcome to SQL Playground</h2>
 
         <a href="/editor">
-            <button style="margin-top:20px; padding:15px; font-size:16px;">Open SQL Editor</button>
-        </a>
-
-        <a href="/logout">
-            <button style="margin-top:15px; padding:15px; font-size:16px; background:#dc3545;">Logout</button>
+            <button style="margin-top:20px; max-width:300px;">&#9654; Open SQL Editor</button>
         </a>
     </div>
 
@@ -24,3 +27,4 @@
 
 </body>
 </html>
+
