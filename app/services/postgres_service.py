@@ -1,6 +1,7 @@
 import psycopg2
 from config import POSTGRES_CONFIG
 
+
 def run_postgres(query):
     try:
         conn = psycopg2.connect(**POSTGRES_CONFIG)
@@ -21,6 +22,7 @@ def run_postgres(query):
     except Exception as e:
         return {"error": str(e)}
 
+
 def get_postgres_tables():
     try:
         conn = psycopg2.connect(**POSTGRES_CONFIG)
@@ -34,5 +36,5 @@ def get_postgres_tables():
         cursor.close()
         conn.close()
         return tables
-    except Exception as e:
-        return {"error": str(e)}
+    except Exception:
+        return []

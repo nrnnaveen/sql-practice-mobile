@@ -1,6 +1,7 @@
 import mysql.connector
 from config import MYSQL_CONFIG
 
+
 def run_mysql(query):
     try:
         conn = mysql.connector.connect(**MYSQL_CONFIG)
@@ -21,6 +22,7 @@ def run_mysql(query):
     except Exception as e:
         return {"error": str(e)}
 
+
 def get_mysql_tables():
     try:
         conn = mysql.connector.connect(**MYSQL_CONFIG)
@@ -30,5 +32,5 @@ def get_mysql_tables():
         cursor.close()
         conn.close()
         return tables
-    except Exception as e:
-        return {"error": str(e)}
+    except Exception:
+        return []

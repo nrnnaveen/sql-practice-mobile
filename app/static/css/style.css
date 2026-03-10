@@ -1,0 +1,137 @@
+/* Base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+a {
+    display: block;
+    text-align: center;
+    color: #3498db;
+    text-decoration: none;
+    margin-top: 8px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Layout for editor page */
+.layout {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.sidebar {
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 4px 0;
+    font-size: 13px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+}
+
+.history-item {
+    padding: 6px 0;
+    font-size: 12px;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-item:hover {
+    color: #3498db;
+}
+
+/* Table result styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th, td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f6f8;
+    font-weight: 600;
+}
+
+tr:nth-child(even) {
+    background-color: #fafafa;
+}
