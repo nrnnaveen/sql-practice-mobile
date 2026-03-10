@@ -2,9 +2,21 @@ import mysql.connector
 from config import MYSQL_CONFIG
 
 # -----------------------------
-# Run any SQL query
+# Block dangerous SQL commands
+# -----------------------------
+DANGEROUS_COMMANDS = ["drop", "alter", "truncate", "delete"]
+
+def is_safe_query(query: str) -> bool:
+    q = query.strip().lower()
+    return not any(cmd in q for cmd in DANGEROUS_COMMANDS)
+
+# -----------------------------
+# Run any SQL query safely
 # -----------------------------
 def run_mysql(query):
+    if not is_safe_query(query):
+        return {"error": "This command is blocked for safety."}
+
     try:
         conn = mysql.connector.connect(**MYSQL_CONFIG)
         cursor = conn.cursor()
@@ -19,7 +31,6 @@ def run_mysql(query):
                 "rows": rows
             }
         else:
-            # Other queries just commit
             conn.commit()
             result = {"message": "Query executed successfully"}
 
@@ -31,7 +42,7 @@ def run_mysql(query):
         return {"error": str(e)}
 
 # -----------------------------
-# Get list of all tables
+# Get list of all tables in DB
 # -----------------------------
 def get_mysql_tables():
     try:
