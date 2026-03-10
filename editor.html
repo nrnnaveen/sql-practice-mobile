@@ -1,64 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>SQL Editor</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 <div class="container">
 
-<h2>SQL Playground</h2>
+<h2 style="text-align:center; margin-bottom:20px;">SQL Playground</h2>
 
-<div class="layout">
+<!-- TABLES -->
+<div class="card">
+  <h4>Tables</h4>
+  <ul style="max-height:150px; overflow-y:auto;">
+    {% if request.form.get('database') == 'postgres' %}
+      {% for table in get_postgres_tables() %}
+      <li>{{ table }}</li>
+      {% endfor %}
+    {% else %}
+      {% for table in get_mysql_tables() %}
+      <li>{{ table }}</li>
+      {% endfor %}
+    {% endif %}
+  </ul>
+</div>
 
-  <!-- TABLE EXPLORER -->
-  <div class="sidebar card">
-    <h4>Tables</h4>
-    <ul>
-      {% if request.form.get('database') == 'postgres' %}
-        {% for table in get_postgres_tables() %}
-        <li>{{ table }}</li>
-        {% endfor %}
-      {% else %}
-        {% for table in get_mysql_tables() %}
-        <li>{{ table }}</li>
-        {% endfor %}
-      {% endif %}
-    </ul>
-  </div>
+<!-- SQL EDITOR -->
+<div class="card">
+  <form method="post" onsubmit="saveQuery()">
+    <select name="database" style="margin-bottom:15px;">
+      <option value="mysql" {% if request.form.get('database')=='mysql' %}selected{% endif %}>MySQL</option>
+      <option value="postgres" {% if request.form.get('database')=='postgres' %}selected{% endif %}>PostgreSQL</option>
+    </select>
 
-  <!-- SQL EDITOR -->
-  <div style="flex:1">
-    <div class="card">
-      <form method="post" onsubmit="saveQuery()">
-        <select name="database">
-          <option value="mysql" {% if request.form.get('database')=='mysql' %}selected{% endif %}>MySQL</option>
-          <option value="postgres" {% if request.form.get('database')=='postgres' %}selected{% endif %}>PostgreSQL</option>
-        </select>
+    <div id="editor" style="height:200px; margin-bottom:15px;"></div>
+    <textarea name="query" id="query" hidden></textarea>
 
-        <div id="editor" style="height:200px;"></div>
-        <textarea name="query" id="query" hidden></textarea>
-
-        <button type="submit">Run Query</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- QUERY HISTORY -->
-  <div class="sidebar card">
-    <h4>History</h4>
-    {% for q in history %}
-    <div class="history-item" onclick="loadQuery(`{{ q }}`)">
-      {{ q }}
-    </div>
-    {% endfor %}
-  </div>
-
+    <button type="submit" style="width:100%; padding:16px; font-size:16px;">Run Query</button>
+  </form>
 </div>
 
 <!-- QUERY RESULT -->
 {% if result %}
-<div class="card">
+<div class="card" style="margin-top:15px;">
   {% if result.error %}
     <p style="color:red;">{{ result.error }}</p>
   {% elif result.columns %}
@@ -82,6 +70,16 @@
 </div>
 {% endif %}
 
+<!-- QUERY HISTORY -->
+<div class="card" style="margin-top:15px;">
+  <h4>History</h4>
+  {% for q in history %}
+  <div class="history-item" onclick="loadQuery(`{{ q }}`)">
+    {{ q }}
+  </div>
+  {% endfor %}
+</div>
+
 </div>
 
 <!-- MONACO EDITOR -->
@@ -91,7 +89,7 @@ let editor;
 require.config({ paths:{vs:"https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs"}});
 require(["vs/editor/editor.main"], function(){
   editor = monaco.editor.create(document.getElementById("editor"), {
-    value:"SELECT * FROM users;",
+    value: `{{ request.form.get('query','') }}`, // previous query stays
     language:"sql",
     theme:"vs-dark",
     automaticLayout:true
