@@ -1,13 +1,13 @@
 import os
 import logging
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "")
-if not SECRET_KEY:
+SECRET_KEY = os.environ.get("SECRET_KEY") or "dev_secret_key_change_in_production"
+
+if not os.environ.get("SECRET_KEY"):
     logging.warning(
         "SECRET_KEY environment variable is not set. "
         "Using an insecure default – set SECRET_KEY in production!"
     )
-    SECRET_KEY = "dev_secret_key_change_in_production"
 
 # ── MySQL ────────────────────────────────────────────────────────────────────
 # On Railway, set MYSQL_HOST / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DATABASE as
