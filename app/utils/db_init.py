@@ -11,7 +11,7 @@ DB_PATH = os.path.join(DB_DIR, "users.db")
 
 
 def init_db():
-    """Create the SQLite database and users table if they do not already exist."""
+    """Create the SQLite database and required tables if they do not already exist."""
     try:
         if not os.path.exists(DB_DIR):
             os.makedirs(DB_DIR)
@@ -25,6 +25,18 @@ def init_db():
                 id       INTEGER PRIMARY KEY AUTOINCREMENT,
                 email    TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS query_history (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id       INTEGER NOT NULL,
+                query         TEXT NOT NULL,
+                database_type TEXT,
+                executed_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """
         )

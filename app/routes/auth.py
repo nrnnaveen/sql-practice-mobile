@@ -1,8 +1,13 @@
+import logging
+import sqlite3
+
 from flask import Blueprint, redirect, render_template, request, session
 
 from app.services.auth_service import create_user, login_user
+from app.utils.db_init import DB_PATH
 
 auth_bp = Blueprint("auth", __name__)
+logger = logging.getLogger(__name__)
 
 
 @auth_bp.route("/")
@@ -39,5 +44,14 @@ def login():
 
 @auth_bp.route("/logout")
 def logout():
+    user_id = session.get("user_id")
+    if user_id is not None:
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            conn.execute("DELETE FROM query_history WHERE user_id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.error("Failed to clear query history on logout for user %s: %s", user_id, exc)
     session.clear()
     return redirect("/login")
