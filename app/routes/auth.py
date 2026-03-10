@@ -28,8 +28,10 @@ def login():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-        if login_user(email, password):
-            session["user"] = email
+        user_id = login_user(email, password)
+        if user_id is not None:
+            session.permanent = True
+            session["user_id"] = user_id
             return redirect("/dashboard")
         error = "Invalid email or password."
     return render_template("login.html", error=error)

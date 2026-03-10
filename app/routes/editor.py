@@ -8,16 +8,18 @@ editor_bp = Blueprint("editor", __name__)
 
 @editor_bp.route("/editor", methods=["GET", "POST"])
 def editor():
-    if "user" not in session:
+    if "user_id" not in session:
         return redirect("/login")
 
     result = None
+    last_query = ""
     if "history" not in session:
         session["history"] = []
 
     if request.method == "POST":
         db = request.form["database"]
         query = request.form["query"]
+        last_query = query
         history = session["history"]
         history.insert(0, query)
         session["history"] = history[:10]
@@ -31,6 +33,7 @@ def editor():
         "editor.html",
         result=result,
         history=session.get("history", []),
+        last_query=last_query,
         get_mysql_tables=get_mysql_tables,
         get_postgres_tables=get_postgres_tables,
     )

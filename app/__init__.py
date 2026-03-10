@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import timedelta
 
 from flask import Flask
 
@@ -16,6 +17,9 @@ def create_app():
     # Single source of truth for configuration
     from config import SECRET_KEY
     app.secret_key = SECRET_KEY
+
+    # Sessions should survive browser restarts (important for mobile users)
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 
     # Configure logging so deployment issues are visible in Railway logs
     logging.basicConfig(

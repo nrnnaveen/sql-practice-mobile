@@ -27,16 +27,16 @@ def create_user(email, password):
 
 
 def login_user(email, password):
-    """Verify credentials. Returns True if the email/password pair is valid."""
+    """Verify credentials. Returns the user ID (int) on success, or None on failure."""
     try:
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
-        cur.execute("SELECT password FROM users WHERE email = ?", (email,))
+        cur.execute("SELECT id, password FROM users WHERE email = ?", (email,))
         row = cur.fetchone()
         conn.close()
-        if row and check_password_hash(row[0], password):
-            return True
-        return False
+        if row and check_password_hash(row[1], password):
+            return row[0]
+        return None
     except Exception as exc:
         logger.error("Error during login for %s: %s", email, exc)
-        return False
+        return None
