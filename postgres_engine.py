@@ -2,9 +2,21 @@ import psycopg2
 from config import POSTGRES_CONFIG
 
 # -----------------------------
-# Run any SQL query
+# Block dangerous SQL commands
+# -----------------------------
+DANGEROUS_COMMANDS = ["drop", "alter", "truncate", "delete"]
+
+def is_safe_query(query: str) -> bool:
+    q = query.strip().lower()
+    return not any(cmd in q for cmd in DANGEROUS_COMMANDS)
+
+# -----------------------------
+# Run any SQL query safely
 # -----------------------------
 def run_postgres(query):
+    if not is_safe_query(query):
+        return {"error": "This command is blocked for safety."}
+
     try:
         conn = psycopg2.connect(**POSTGRES_CONFIG)
         cursor = conn.cursor()
@@ -19,7 +31,6 @@ def run_postgres(query):
                 "rows": rows
             }
         else:
-            # Other queries just commit
             conn.commit()
             result = {"message": "Query executed successfully"}
 
@@ -31,7 +42,7 @@ def run_postgres(query):
         return {"error": str(e)}
 
 # -----------------------------
-# Get list of all tables
+# Get list of all tables in DB
 # -----------------------------
 def get_postgres_tables():
     try:
