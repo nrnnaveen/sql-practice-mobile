@@ -66,19 +66,19 @@ def google_callback():
         google_id = userinfo.get("sub", "")
 
         if not email:
-            return redirect("/login")
+            return redirect(url_for("auth.login"))
 
         user_id = get_or_create_google_user(email, name, picture, google_id)
         if user_id is None:
-            return redirect("/login")
+            return redirect(url_for("auth.login"))
 
         session.permanent = True
         session["user_id"] = user_id
         session["login_type"] = "google"
-        return redirect("/dashboard")
+        return redirect(url_for("dashboard.dashboard"))
     except Exception as exc:
         logger.error("Google OAuth callback error: %s", exc)
-        return redirect("/login")
+        return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/logout")

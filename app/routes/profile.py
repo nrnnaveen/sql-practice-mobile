@@ -35,13 +35,13 @@ def _allowed_file(filename):
 @profile_bp.route("/profile", methods=["GET", "POST"])
 def profile():
     if "user_id" not in session:
-        return redirect("/login")
+        return redirect(url_for("auth.login"))
 
     user_id = session["user_id"]
     user = get_user_by_id(user_id)
     if not user:
         session.clear()
-        return redirect("/login")
+        return redirect(url_for("auth.login"))
 
     error = None
     success = None

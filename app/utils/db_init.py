@@ -19,8 +19,14 @@ def _migrate(conn):
         ("picture", "TEXT"),
         ("google_id", "TEXT"),
     ]
+    _allowed_cols = {"name", "picture", "google_id"}
+    _allowed_types = {"TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"}
     for col, col_type in new_columns:
         if col not in existing:
+            # Whitelist both column name and type before using in DDL
+            if col not in _allowed_cols or col_type not in _allowed_types:
+                logger.error("Refusing to migrate unknown column %s %s", col, col_type)
+                continue
             cur.execute(f"ALTER TABLE users ADD COLUMN {col} {col_type}")
             logger.info("Migrated users table: added column %s", col)
     conn.commit()

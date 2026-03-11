@@ -7,9 +7,11 @@ dashboard_bp = Blueprint("dashboard", __name__)
 
 def _get_display_name(user, login_type):
     """Derive a greeting name from profile data or email."""
-    if user.get("name"):
+    name = user.get("name") or ""
+    parts = name.split()
+    if parts:
         # Use first word of full name (e.g. "John Doe" → "John")
-        return user["name"].split()[0]
+        return parts[0]
     # Fall back: extract part before @ from email
     email = user.get("email", "")
     local = email.split("@")[0] if "@" in email else email
