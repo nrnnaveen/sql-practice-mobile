@@ -3,3 +3,5 @@ mysql-connector-python>=8.0
 psycopg2-binary>=2.9
 Werkzeug>=2.3
 gunicorn>=21.0
+authlib>=1.6.7
+requests>=2.32.3
