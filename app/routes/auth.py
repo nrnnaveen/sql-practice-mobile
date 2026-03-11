@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 
-from flask import Blueprint, redirect, render_template, request, session
+from flask import Blueprint, jsonify, redirect, render_template, request, session
 
 from app.services.auth_service import create_user, login_user
 from app.utils.db_init import DB_PATH
@@ -34,10 +34,15 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
         user_id = login_user(email, password)
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
         if user_id is not None:
             session.permanent = True
             session["user_id"] = user_id
+            if is_ajax:
+                return jsonify({"success": True})
             return redirect("/dashboard")
+        if is_ajax:
+            return jsonify({"success": False, "error": "Invalid email or password."})
         error = "Invalid email or password."
     return render_template("login.html", error=error)
 

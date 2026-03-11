@@ -1,52 +1,30 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
-<title>Login</title>
-
-<link rel="stylesheet" href="/static/style.css">
-
+    <meta charset="UTF-8">
+    <title>SQL Authentication Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
-<body>
-
-<div class="container">
-
-<div class="card">
-
-<h2>Login</h2>
-
-<form method="post" action="/login">
-
-<input 
-type="email"
-name="email"
-placeholder="Enter your email"
-required
->
-
-<input
-type="password"
-name="password"
-placeholder="Enter your password"
-required
->
-
-<button type="submit">Login</button>
-
-</form>
-
-<p style="text-align:center; margin-top:10px;">
-Don't have an account?
-</p>
-
-<a href="/signup">Create account</a>
-
-</div>
-
-</div>
-
+<body class="terminal-bg">
+    <canvas id="sql-canvas"></canvas>
+    <div class="scanlines"></div>
+    <div class="terminal-center">
+        <div id="boot-sequence" class="terminal-boot"></div>
+        <form id="login-form" class="terminal-card hidden" action="{{ url_for('auth.login') }}" method="post" autocomplete="off" novalidate data-dashboard-url="{{ url_for('dashboard.dashboard') }}">
+            <div class="terminal-title">&#x25A0; SQL AUTH TERMINAL</div>
+            {% if error %}
+            <div class="terminal-error">&#x25B6; {{ error }}</div>
+            {% endif %}
+            <label for="email" class="terminal-label">&#x25B6; EMAIL:</label>
+            <input type="email" id="email" name="email" class="terminal-input" placeholder="user@database.com" required autofocus>
+            <label for="password" class="terminal-label">&#x25B6; PASSWORD:</label>
+            <input type="password" id="password" name="password" class="terminal-input" placeholder="••••••••" required>
+            <button type="submit" class="terminal-button">EXECUTE QUERY</button>
+            <p class="terminal-signup-link">No account? <a href="{{ url_for('auth.signup') }}">CREATE USER</a></p>
+        </form>
+        <div id="sql-animation" class="terminal-query-area hidden"></div>
+    </div>
+    <script src="{{ url_for('static', filename='sql_animation.js') }}"></script>
 </body>
-
 </html>
