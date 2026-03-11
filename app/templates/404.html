@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 – Page Not Found</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: 700;
+            color: #cba6f7;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .error-title {
+            font-size: 1.5rem;
+            color: #cdd6f4;
+            margin-bottom: 1rem;
+        }
+        .error-msg {
+            color: #a6adc8;
+            margin-bottom: 2rem;
+            max-width: 400px;
+        }
+        .error-actions a {
+            display: inline-block;
+            padding: 0.6rem 1.4rem;
+            border-radius: 6px;
+            background: #89b4fa;
+            color: #1e1e2e;
+            font-weight: 600;
+            text-decoration: none;
+            margin: 0 0.4rem;
+            transition: background 0.2s;
+        }
+        .error-actions a:hover { background: #74c7ec; }
+    </style>
+</head>
+<body>
+<div class="error-container">
+    <div class="error-code">404</div>
+    <div class="error-title">Page Not Found</div>
+    <p class="error-msg">The page you are looking for doesn't exist or has been moved.</p>
+    <div class="error-actions">
+        <a href="{{ url_for('dashboard.dashboard') if session.get('user_id') else url_for('auth.login') }}">
+            &#x2302; Home
+        </a>
+        <a href="{{ url_for('editor.editor') if session.get('user_id') else url_for('auth.login') }}">
+            &#x25B6; SQL Editor
+        </a>
+    </div>
+</div>
+</body>
+</html>

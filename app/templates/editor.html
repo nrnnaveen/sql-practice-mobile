@@ -5,13 +5,117 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>SQL Editor</title>
 <link rel="stylesheet" href="/static/style.css">
+<style>
+  /* ── Editor-page extras ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .toolbar select { flex: 1; min-width: 120px; }
+  .btn-run   { background: #a6e3a1; color: #1e1e2e; }
+  .btn-run:hover { background: #94d882; }
+  .btn-clear { background: #45475a; color: #cdd6f4; }
+  .btn-clear:hover { background: #585b70; }
+  .btn-template { background: #89dceb; color: #1e1e2e; }
+  .btn-template:hover { background: #74c7ec; }
+  .btn-bookmark { background: #f9e2af; color: #1e1e2e; border: none; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; font-size: 0.85rem; }
+  .btn-bookmark:hover { background: #f7c948; }
+  .export-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .btn-export { background: #cba6f7; color: #1e1e2e; border: none; border-radius: 6px; padding: 0.35rem 0.8rem; cursor: pointer; font-size: 0.82rem; }
+  .btn-export:hover { background: #b99ef0; }
+  .stats-bar {
+    font-size: 0.78rem;
+    color: #a6adc8;
+    margin-top: 0.4rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .stats-bar span { white-space: nowrap; }
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .pagination button {
+    background: #45475a;
+    color: #cdd6f4;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .pagination button:hover { background: #585b70; }
+  .pagination button[disabled] { opacity: 0.4; cursor: default; }
+  .pagination .page-info { color: #a6adc8; font-size: 0.82rem; }
+  .theme-toggle {
+    margin-left: auto;
+    background: #45475a;
+    color: #cdd6f4;
+    border: none;
+    border-radius: 6px;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  /* ── Templates panel ── */
+  #templates-panel {
+    display: none;
+    position: fixed;
+    top: 0; right: 0;
+    width: min(360px, 100vw);
+    height: 100vh;
+    background: #313244;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  #templates-panel.open { display: block; }
+  .tpl-close { float: right; background: none; border: none; color: #f38ba8; font-size: 1.3rem; cursor: pointer; }
+  .tpl-item { padding: 0.6rem; border-radius: 6px; cursor: pointer; margin-bottom: 0.4rem; background: #1e1e2e; }
+  .tpl-item:hover { background: #45475a; }
+  .tpl-title { font-weight: 600; font-size: 0.9rem; color: #cdd6f4; }
+  .tpl-category { font-size: 0.75rem; color: #a6adc8; margin-top: 0.1rem; }
+  .tpl-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .tpl-filter button {
+    background: #45475a; color: #cdd6f4; border: none;
+    border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.78rem; cursor: pointer;
+  }
+  .tpl-filter button.active { background: #89b4fa; color: #1e1e2e; }
+  /* ── Light theme ── */
+  body.light { background: #eff1f5; color: #4c4f69; }
+  body.light .card { background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  body.light .history-item { background: #e6e9f0; }
+  body.light .history-item:hover { background: #d0d3de; }
+  body.light .btn-clear, body.light .theme-toggle { background: #dce0e8; color: #4c4f69; }
+  body.light #templates-panel { background: #eff1f5; }
+  body.light .tpl-item { background: #e6e9f0; }
+  body.light .tpl-item:hover { background: #d0d3de; }
+  /* ── Shortcut hint ── */
+  .shortcut-hint { font-size: 0.72rem; color: #585b70; margin-top: 0.3rem; }
+</style>
 </head>
 <body>
 <div class="container">
 
   <div class="editor-header">
     <h2>SQL Playground</h2>
-    <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button class="theme-toggle" id="themeBtn" title="Toggle dark/light theme">&#9790; Theme</button>
+      <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    </div>
   </div>
 
   <div class="editor-layout">
@@ -21,16 +125,21 @@
 
       <!-- SQL EDITOR -->
       <div class="card">
-        <form method="post" onsubmit="saveQuery()">
-          <select name="database" id="db-select">
-            <option value="mysql" {% if selected_db == 'mysql' %}selected{% endif %}>MySQL</option>
-            <option value="postgres" {% if selected_db == 'postgres' %}selected{% endif %}>PostgreSQL</option>
-          </select>
-
+        <form method="post" id="query-form" onsubmit="saveQuery()">
+          <div class="toolbar">
+            <select name="database" id="db-select">
+              <option value="mysql" {% if selected_db == 'mysql' %}selected{% endif %}>MySQL</option>
+              <option value="postgres" {% if selected_db == 'postgres' %}selected{% endif %}>PostgreSQL</option>
+            </select>
+            <button type="submit" class="btn-run" title="Run (Ctrl+Enter)">&#9654; Run</button>
+            <button type="button" class="btn-clear" onclick="clearEditor()">&#x2715; Clear</button>
+            <button type="button" class="btn-template" onclick="openTemplates()">&#x1F4CB; Templates</button>
+            <button type="button" class="btn-bookmark" onclick="bookmarkCurrent()" title="Save as bookmark">&#x2605; Bookmark</button>
+          </div>
           <div id="editor" class="monaco-editor-box"></div>
           <textarea name="query" id="query" hidden></textarea>
-
-          <button type="submit">&#9654; Run Query</button>
+          <input type="hidden" name="page" id="page-input" value="1">
+          <p class="shortcut-hint">Ctrl+Enter to run &nbsp;|&nbsp; Ctrl+K to clear &nbsp;|&nbsp; Ctrl+S to bookmark</p>
         </form>
       </div>
 
@@ -41,8 +150,14 @@
           {% if result.error %}
             <p class="error">&#10006; {{ result.error }}</p>
           {% elif result.columns %}
+            <div class="stats-bar">
+              <span>&#128200; {{ result.total_rows }} rows</span>
+              <span>&#9201; {{ result.elapsed_ms }}ms</span>
+              {% if result.cached %}<span>&#127760; cached</span>{% endif %}
+              <span>Page {{ result.page }} of {{ result.total_pages }}</span>
+            </div>
             <div class="table-scroll">
-            <table>
+            <table id="result-table">
               <tr>
                 {% for col in result.columns %}
                 <th>{{ col }}</th>
@@ -57,8 +172,26 @@
               {% endfor %}
             </table>
             </div>
+            <!-- Pagination controls -->
+            {% if result.total_pages > 1 %}
+            <div class="pagination">
+              <button onclick="goPage({{ result.page - 1 }})"
+                      {% if result.page <= 1 %}disabled{% endif %}>&#8592; Prev</button>
+              <span class="page-info">{{ result.page }} / {{ result.total_pages }}</span>
+              <button onclick="goPage({{ result.page + 1 }})"
+                      {% if result.page >= result.total_pages %}disabled{% endif %}>Next &#8594;</button>
+            </div>
+            {% endif %}
+            <!-- Export buttons -->
+            <div class="export-bar">
+              <button class="btn-export" onclick="exportResults('csv')">&#x2B07; CSV</button>
+              <button class="btn-export" onclick="exportResults('json')">&#x2B07; JSON</button>
+            </div>
           {% else %}
             <p>&#10003; {{ result.message }}</p>
+            {% if result.elapsed_ms is defined %}
+            <div class="stats-bar"><span>&#9201; {{ result.elapsed_ms }}ms</span></div>
+            {% endif %}
           {% endif %}
         </div>
         {% endif %}
@@ -85,33 +218,177 @@
 
 </div>
 
+<!-- Templates slide-over panel -->
+<div id="templates-panel">
+  <button class="tpl-close" onclick="closeTemplates()">&#x2715;</button>
+  <h4 style="margin-bottom:0.75rem;">SQL Templates</h4>
+  <div class="tpl-filter" id="tpl-filter">
+    <button class="active" onclick="filterTemplates('all',this)">All</button>
+    <button onclick="filterTemplates('basics',this)">Basics</button>
+    <button onclick="filterTemplates('aggregation',this)">Aggregation</button>
+    <button onclick="filterTemplates('joins',this)">Joins</button>
+    <button onclick="filterTemplates('advanced',this)">Advanced</button>
+    <button onclick="filterTemplates('ddl',this)">DDL</button>
+    <button onclick="filterTemplates('dml',this)">DML</button>
+  </div>
+  <div id="tpl-list">Loading…</div>
+</div>
+
+<!-- Store result data for export -->
+<script>
+const _resultColumns = {{ (result.columns if result and result.columns else []) | tojson }};
+const _resultRows    = {{ (result.rows    if result and result.columns else []) | tojson }};
+const _allTemplates  = [];
+</script>
+
 <!-- MONACO EDITOR -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
 <script>
 let editor;
 require.config({ paths:{vs:"https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs"}});
 require(["vs/editor/editor.main"], function(){
+  const preferLight = localStorage.getItem("sqlTheme") === "light";
+  if(preferLight) document.body.classList.add("light");
+  updateThemeBtn(preferLight);
+
   editor = monaco.editor.create(document.getElementById("editor"), {
     value:{{ last_query | tojson }},
     language:"sql",
-    theme:"vs-dark",
+    theme: preferLight ? "vs" : "vs-dark",
     automaticLayout:true,
     minimap:{enabled:false},
     fontSize:14,
     lineNumbers:"on",
     wordWrap:"on"
   });
+
+  // Keyboard shortcut: Ctrl+Enter → submit form
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function(){
+    document.getElementById("query").value = editor.getValue();
+    document.getElementById("query-form").submit();
+  });
+
+  // Ctrl+K → clear editor
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, function(){
+    editor.setValue("");
+  });
+
+  // Ctrl+S → bookmark current query
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function(){
+    bookmarkCurrent();
+  });
 });
 
 function saveQuery(){
   document.getElementById("query").value = editor ? editor.getValue() : "";
+  document.getElementById("page-input").value = "1";
+}
+
+function clearEditor(){
+  if(editor){ editor.setValue(""); }
 }
 
 function loadQuery(q){
   if(editor){ editor.setValue(q); }
 }
+
+// ── Pagination ────────────────────────────────────────────────────────────
+function goPage(p){
+  document.getElementById("query").value = editor ? editor.getValue() : "";
+  document.getElementById("page-input").value = p;
+  document.getElementById("query-form").submit();
+}
+
+// ── Theme Toggle ─────────────────────────────────────────────────────────
+document.getElementById("themeBtn").addEventListener("click", function(){
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("sqlTheme", isLight ? "light" : "dark");
+  updateThemeBtn(isLight);
+  if(typeof monaco !== "undefined" && editor){
+    monaco.editor.setTheme(isLight ? "vs" : "vs-dark");
+  }
+});
+
+function updateThemeBtn(isLight){
+  const btn = document.getElementById("themeBtn");
+  if(btn) btn.textContent = isLight ? "🌙 Dark" : "☀ Light";
+}
+
+// ── Templates ────────────────────────────────────────────────────────────
+let _templates = [];
+function openTemplates(){
+  document.getElementById("templates-panel").classList.add("open");
+  if(_templates.length === 0){
+    fetch("/api/templates").then(r=>r.json()).then(data=>{
+      _templates = data;
+      renderTemplates(_templates);
+    }).catch(()=>{
+      document.getElementById("tpl-list").textContent = "Failed to load templates.";
+    });
+  }
+}
+function closeTemplates(){
+  document.getElementById("templates-panel").classList.remove("open");
+}
+function filterTemplates(cat, btn){
+  document.querySelectorAll(".tpl-filter button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const filtered = cat === "all" ? _templates : _templates.filter(t=>t.category===cat);
+  renderTemplates(filtered);
+}
+function renderTemplates(list){
+  const el = document.getElementById("tpl-list");
+  if(!list.length){ el.innerHTML="<p style='color:#a6adc8'>No templates found.</p>"; return; }
+  el.innerHTML = list.map(t=>`
+    <div class="tpl-item" onclick="loadTemplate(${JSON.stringify(t.sql)})">
+      <div class="tpl-title">${t.title}</div>
+      <div class="tpl-category">${t.category}</div>
+    </div>`).join("");
+}
+function loadTemplate(sql){
+  if(editor){ editor.setValue(sql); }
+  closeTemplates();
+}
+
+// ── Bookmarks ────────────────────────────────────────────────────────────
+function bookmarkCurrent(){
+  const q = editor ? editor.getValue().trim() : "";
+  if(!q){ alert("No query to bookmark."); return; }
+  const db = document.getElementById("db-select").value;
+  const title = prompt("Bookmark title (optional):", "") ?? "";
+  fetch("/api/bookmarks", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({query:q, db_type:db, title:title})
+  }).then(r=>r.json()).then(d=>{
+    if(d.error){ alert("Error: "+d.error); }
+    else{ alert("Bookmark saved! ★"); }
+  }).catch(()=>alert("Failed to save bookmark."));
+}
+
+// ── Export ───────────────────────────────────────────────────────────────
+function exportResults(fmt){
+  if(!_resultColumns.length){ alert("No results to export."); return; }
+  fetch("/api/export", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({format:fmt, columns:_resultColumns, rows:_resultRows})
+  }).then(response=>{
+    if(!response.ok){ return response.json().then(d=>{throw new Error(d.error||"Export failed");}); }
+    return response.blob().then(blob=>({blob, response}));
+  }).then(({blob, response})=>{
+    const cd = response.headers.get("Content-Disposition")||"";
+    const match = cd.match(/filename=([^\s;]+)/);
+    const filename = match ? match[1] : `query_result.${fmt}`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }).catch(err=>alert("Export error: "+err.message));
+}
 </script>
 
 </body>
 </html>
+
 

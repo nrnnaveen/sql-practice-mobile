@@ -3,9 +3,9 @@ import logging
 
 from flask import Blueprint, redirect, render_template, request, session
 
-from app.services.mysql_service import run_mysql
-from app.services.postgres_service import run_postgres
+from app.services.query_service import execute_query
 from app.utils.db_init import DB_PATH
+from app.utils.decorators import rate_limit
 
 editor_bp = Blueprint("editor", __name__)
 logger = logging.getLogger(__name__)
@@ -42,7 +42,8 @@ def _load_history(user_id, limit=20):
 
 
 @editor_bp.route("/editor", methods=["GET", "POST"])
-def editor():
+@rate_limit(max_requests=10, window_seconds=60)
+def editor(**kwargs):
     if "user_id" not in session:
         return redirect("/login")
 
@@ -51,16 +52,21 @@ def editor():
     last_query = ""
     selected_db = "mysql"
 
-    if request.method == "POST":
+    # Rate limit exceeded – show error without running the query
+    if kwargs.get("_rate_limited"):
+        result = {"error": "Rate limit exceeded: max 10 queries per minute. Please wait."}
+
+    elif request.method == "POST":
         selected_db = request.form.get("database", "mysql")
         query = request.form.get("query", "").strip()
         last_query = query
+        page = int(request.form.get("page", 1))
+
         if query:
-            _save_history(user_id, query, selected_db)
-        if selected_db == "mysql":
-            result = run_mysql(query)
-        elif selected_db == "postgres":
-            result = run_postgres(query)
+            result = execute_query(query, selected_db, page=page)
+            # Only save to history when the query was accepted (no validation error)
+            if "error" not in result:
+                _save_history(user_id, query, selected_db)
 
     history = _load_history(user_id)
 

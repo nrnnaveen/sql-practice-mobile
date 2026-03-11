@@ -1,4 +1,5 @@
 import logging
+import re
 import sqlite3
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
@@ -10,6 +11,25 @@ from app.utils.db_init import DB_PATH
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
 
+# Password must be ≥8 chars and contain at least one uppercase, one lowercase,
+# one digit, and one special character.
+_PW_MIN_LEN = 8
+_PW_PATTERN = re.compile(
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]).{8,}$"
+)
+
+
+def _validate_password(password: str) -> str | None:
+    """Return an error message, or None when the password is acceptable."""
+    if len(password) < _PW_MIN_LEN:
+        return f"Password must be at least {_PW_MIN_LEN} characters."
+    if not _PW_PATTERN.match(password):
+        return (
+            "Password must contain at least one uppercase letter, "
+            "one lowercase letter, one digit, and one special character."
+        )
+    return None
+
 
 @auth_bp.route("/")
 def home():
@@ -20,11 +40,15 @@ def home():
 def signup():
     error = None
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        if create_user(email, password):
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        pw_error = _validate_password(password)
+        if pw_error:
+            error = pw_error
+        elif create_user(email, password):
             return redirect("/login")
-        error = "Could not create account. The email address may already be registered."
+        else:
+            error = "Could not create account. The email address may already be registered."
     return render_template("signup.html", error=error)
 
 

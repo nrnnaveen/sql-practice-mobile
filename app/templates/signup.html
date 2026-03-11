@@ -1,52 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>Signup</title>
-
+<title>Create Account – SQL Playground</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="/static/style.css">
-
+<style>
+  .signup-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  .signup-card {
+    width: 100%;
+    max-width: 420px;
+  }
+  .pw-rules {
+    font-size: 0.78rem;
+    color: #a6adc8;
+    margin-top: 0.4rem;
+    padding-left: 1rem;
+    line-height: 1.6;
+  }
+  .pw-rules li.ok  { color: #a6e3a1; }
+  .pw-rules li.bad { color: #f38ba8; }
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="signup-container">
+<div class="card signup-card">
 
-<div class="card">
+<h2 style="margin-bottom:1.25rem;">Create Account</h2>
 
-<h2>Signup</h2>
+{% if error %}
+<div class="terminal-error" style="margin-bottom:1rem;">&#x25B6; {{ error }}</div>
+{% endif %}
 
-<form method="post">
+<form method="post" id="signup-form">
 
-<input 
-type="email"
-name="email"
-placeholder="Enter your email"
-required
->
+  <label style="display:block;margin-bottom:0.25rem;font-size:0.9rem;">Email</label>
+  <input
+    type="email"
+    name="email"
+    placeholder="you@example.com"
+    required
+    style="width:100%;margin-bottom:1rem;"
+  >
 
-<input
-type="password"
-name="password"
-placeholder="Enter your password"
-required
->
+  <label style="display:block;margin-bottom:0.25rem;font-size:0.9rem;">Password</label>
+  <input
+    type="password"
+    name="password"
+    id="pw-input"
+    placeholder="••••••••"
+    required
+    oninput="checkPw(this.value)"
+    style="width:100%;margin-bottom:0.25rem;"
+  >
 
-<button type="submit">Register</button>
+  <ul class="pw-rules" id="pw-rules">
+    <li id="rule-len">At least 8 characters</li>
+    <li id="rule-upper">One uppercase letter (A–Z)</li>
+    <li id="rule-lower">One lowercase letter (a–z)</li>
+    <li id="rule-digit">One digit (0–9)</li>
+    <li id="rule-special">One special character (!@#$%…)</li>
+  </ul>
+
+  <button type="submit" style="width:100%;margin-top:1rem;">Register</button>
 
 </form>
 
-<p style="text-align:center; margin-top:10px;">
-Already have an account?
+<p style="text-align:center; margin-top:1rem; font-size:0.9rem;">
+  Already have an account? <a href="/login">Login here</a>
 </p>
 
-<a href="/login">Login here</a>
-
+</div>
 </div>
 
-</div>
+<script>
+function checkPw(val){
+  const setRule = (id, ok) => {
+    const el = document.getElementById(id);
+    el.classList.toggle("ok", ok);
+    el.classList.toggle("bad", !ok);
+  };
+  setRule("rule-len",     val.length >= 8);
+  setRule("rule-upper",   /[A-Z]/.test(val));
+  setRule("rule-lower",   /[a-z]/.test(val));
+  setRule("rule-digit",   /\d/.test(val));
+  setRule("rule-special", /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val));
+}
+</script>
 
 </body>
-
 </html>
+
