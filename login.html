@@ -1,57 +1,13 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-<title>Login</title>
-
-<link rel="stylesheet" href="/static/style.css">
-
-</head>
-
-<body>
-
-<!-- Matrix Background -->
-<canvas id="matrix"></canvas>
-
-<div class="container">
-
-<div class="card">
-
 <h2>Login</h2>
 
 <form method="post" action="/login">
 
-<input 
-name="email"
-type="email"
-placeholder="Email"
-required
->
+<input name="email" placeholder="Email">
 
-<input 
-name="password"
-type="password"
-placeholder="Password"
-required
->
+<input name="password" type="password" placeholder="Password">
 
-<button type="submit">Login</button>
+<button>Login</button>
 
 </form>
 
-<p style="text-align:center; margin-top:10px;">
-Don't have an account?
-</p>
-
 <a href="/signup">Create account</a>
-
-</div>
-
-</div>
-
-<!-- Matrix Animation Script -->
-<script src="/static/matrix.js"></script>
-
-</body>
-
-</html>
