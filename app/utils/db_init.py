@@ -13,22 +13,40 @@ DB_PATH = os.path.join(DB_DIR, "users.db")
 def _migrate(conn):
     """Add any new columns introduced after the initial schema."""
     cur = conn.cursor()
-    existing = {row[1] for row in cur.execute("PRAGMA table_info(users)")}
-    new_columns = [
+
+    # ── users table ─────────────────────────────────────────────────────────
+    existing_users = {row[1] for row in cur.execute("PRAGMA table_info(users)")}
+    user_columns = [
         ("name", "TEXT"),
         ("picture", "TEXT"),
         ("google_id", "TEXT"),
     ]
-    _allowed_cols = {"name", "picture", "google_id"}
+    _allowed_user_cols = {"name", "picture", "google_id"}
     _allowed_types = {"TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"}
-    for col, col_type in new_columns:
-        if col not in existing:
-            # Whitelist both column name and type before using in DDL
-            if col not in _allowed_cols or col_type not in _allowed_types:
+    for col, col_type in user_columns:
+        if col not in existing_users:
+            if col not in _allowed_user_cols or col_type not in _allowed_types:
                 logger.error("Refusing to migrate unknown column %s %s", col, col_type)
                 continue
             cur.execute(f"ALTER TABLE users ADD COLUMN {col} {col_type}")
             logger.info("Migrated users table: added column %s", col)
+
+    # ── query_history table ──────────────────────────────────────────────────
+    existing_qh = {row[1] for row in cur.execute("PRAGMA table_info(query_history)")}
+    qh_columns = [
+        ("execution_time", "REAL"),
+        ("success", "INTEGER"),
+        ("error_message", "TEXT"),
+    ]
+    _allowed_qh_cols = {"execution_time", "success", "error_message"}
+    for col, col_type in qh_columns:
+        if col not in existing_qh:
+            if col not in _allowed_qh_cols or col_type not in _allowed_types:
+                logger.error("Refusing to migrate unknown column %s %s", col, col_type)
+                continue
+            cur.execute(f"ALTER TABLE query_history ADD COLUMN {col} {col_type}")
+            logger.info("Migrated query_history table: added column %s", col)
+
     conn.commit()
 
 
@@ -39,7 +57,8 @@ def init_db():
             os.makedirs(DB_DIR)
             logger.info("Created database directory: %s", DB_DIR)
 
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        conn.execute("PRAGMA journal_mode=WAL")
         cur = conn.cursor()
         cur.execute(
             """
@@ -56,11 +75,47 @@ def init_db():
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS query_history (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id        INTEGER NOT NULL,
+                query          TEXT NOT NULL,
+                database_type  TEXT,
+                execution_time REAL,
+                success        INTEGER NOT NULL DEFAULT 1,
+                error_message  TEXT,
+                executed_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_query_history_user
+            ON query_history (user_id, executed_at DESC)
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS bookmarks (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id       INTEGER NOT NULL,
+                name          TEXT NOT NULL,
                 query         TEXT NOT NULL,
-                database_type TEXT,
-                executed_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                description   TEXT,
+                database_type TEXT NOT NULL DEFAULT 'mysql',
+                tags          TEXT,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id          INTEGER PRIMARY KEY,
+                theme            TEXT NOT NULL DEFAULT 'dark',
+                default_database TEXT NOT NULL DEFAULT 'mysql',
+                results_per_page INTEGER NOT NULL DEFAULT 100,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """

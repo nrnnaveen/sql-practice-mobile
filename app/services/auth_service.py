@@ -4,26 +4,34 @@ import logging
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.utils.db_init import DB_PATH
+from app.utils.validators import validate_password_strength
 
 logger = logging.getLogger(__name__)
 
 
 def create_user(email, password):
     """Insert a new user into the database. Returns True on success."""
+    valid, msg = validate_password_strength(password)
+    if not valid:
+        logger.warning("Password policy violation for %s: %s", email, msg)
+        return False, msg
+    conn = None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect(DB_PATH, timeout=10)
         cur = conn.cursor()
         hashed = generate_password_hash(password, method="pbkdf2:sha256")
         cur.execute(
             "INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed)
         )
         conn.commit()
-        conn.close()
         logger.info("Created user: %s", email)
-        return True
+        return True, ""
     except Exception as exc:
         logger.error("Error creating user %s: %s", email, exc)
-        return False
+        return False, "Could not create account. The email address may already be registered."
+    finally:
+        if conn:
+            conn.close()
 
 
 def login_user(email, password):
@@ -128,4 +136,54 @@ def update_user_profile(user_id, name=None, picture=None):
         return True
     except Exception as exc:
         logger.error("Error updating profile for user %s: %s", user_id, exc)
+        return False
+
+
+def get_user_settings(user_id):
+    """Return settings dict for the user, creating default row if absent."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM user_settings WHERE user_id = ?", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            cur.execute(
+                "INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)", (user_id,)
+            )
+            conn.commit()
+            cur.execute("SELECT * FROM user_settings WHERE user_id = ?", (user_id,))
+            row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else {"theme": "dark", "default_database": "mysql", "results_per_page": 100}
+    except Exception as exc:
+        logger.error("Error fetching settings for user %s: %s", user_id, exc)
+        return {"theme": "dark", "default_database": "mysql", "results_per_page": 100}
+
+
+def update_user_settings(user_id, theme=None, default_database=None, results_per_page=None):
+    """Upsert user settings."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)", (user_id,)
+        )
+        if theme is not None:
+            cur.execute("UPDATE user_settings SET theme = ? WHERE user_id = ?", (theme, user_id))
+        if default_database is not None:
+            cur.execute(
+                "UPDATE user_settings SET default_database = ? WHERE user_id = ?",
+                (default_database, user_id),
+            )
+        if results_per_page is not None:
+            cur.execute(
+                "UPDATE user_settings SET results_per_page = ? WHERE user_id = ?",
+                (int(results_per_page), user_id),
+            )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as exc:
+        logger.error("Error updating settings for user %s: %s", user_id, exc)
         return False
