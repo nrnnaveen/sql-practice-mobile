@@ -22,9 +22,10 @@ def signup():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-        if create_user(email, password):
+        success, msg = create_user(email, password)
+        if success:
             return redirect("/login")
-        error = "Could not create account. The email address may already be registered."
+        error = msg or "Could not create account. The email address may already be registered."
     return render_template("signup.html", error=error)
 
 

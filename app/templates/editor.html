@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="{{ theme | e }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -9,10 +9,82 @@
 <body>
 <div class="container">
 
+  <!-- ── Header ── -->
   <div class="editor-header">
-    <h2>SQL Playground</h2>
-    <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    <h2>&#x25A0; SQL Playground</h2>
+    <div class="header-actions">
+      <button id="theme-toggle" class="icon-btn" title="Toggle dark/light mode" aria-label="Toggle theme">
+        <span id="theme-icon">{% if theme == 'dark' %}&#x2600;{% else %}&#x263D;{% endif %}</span>
+      </button>
+      <button id="shortcuts-help-btn" class="icon-btn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
+      <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    </div>
   </div>
+
+  <!-- ── Keyboard shortcuts help modal ── -->
+  <div id="shortcuts-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Keyboard Shortcuts</h3>
+        <button class="modal-close" id="close-shortcuts" aria-label="Close">&times;</button>
+      </div>
+      <table class="shortcuts-table">
+        <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run query</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save bookmark</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Search history</td></tr>
+        <tr><td><kbd>Ctrl</kbd>+<kbd>T</kbd></td><td>Open templates</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close modal</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Save bookmark modal ── -->
+  <div id="bookmark-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Save bookmark">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>&#x1F516; Save Bookmark</h3>
+        <button class="modal-close" id="close-bookmark" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Name <span class="required">*</span></label>
+        <input type="text" id="bookmark-name" class="form-input" placeholder="My query" maxlength="100">
+        <label class="form-label">Description</label>
+        <input type="text" id="bookmark-desc" class="form-input" placeholder="What this query does…" maxlength="200">
+        <label class="form-label">Tags</label>
+        <input type="text" id="bookmark-tags" class="form-input" placeholder="select, join, …" maxlength="100">
+        <button id="save-bookmark-btn" class="btn btn-primary" style="width:100%;margin-top:1rem">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Templates modal ── -->
+  <div id="templates-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Query templates">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h3>&#x1F4CB; Query Templates</h3>
+        <button class="modal-close" id="close-templates" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="templates-list">
+        <p class="loading-text">Loading templates…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bookmarks panel modal ── -->
+  <div id="bookmarks-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="My bookmarks">
+    <div class="modal-content modal-wide">
+      <div class="modal-header">
+        <h3>&#x2605; My Bookmarks</h3>
+        <button class="modal-close" id="close-bookmarks" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="bookmarks-list">
+        <p class="loading-text">Loading bookmarks…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast notification area ── -->
+  <div id="toast-container" role="status" aria-live="polite"></div>
 
   <div class="editor-layout">
 
@@ -21,33 +93,75 @@
 
       <!-- SQL EDITOR -->
       <div class="card">
-        <form method="post" onsubmit="saveQuery()">
-          <select name="database" id="db-select">
-            <option value="mysql" {% if selected_db == 'mysql' %}selected{% endif %}>MySQL</option>
-            <option value="postgres" {% if selected_db == 'postgres' %}selected{% endif %}>PostgreSQL</option>
-          </select>
+        <form method="post" id="query-form" onsubmit="saveQuery()">
+          <div class="editor-toolbar">
+            <select name="database" id="db-select" class="db-select">
+              <option value="mysql" {% if selected_db == 'mysql' %}selected{% endif %}>MySQL</option>
+              <option value="postgres" {% if selected_db == 'postgres' %}selected{% endif %}>PostgreSQL</option>
+            </select>
+            <div class="toolbar-actions">
+              <button type="button" id="open-templates-btn" class="btn btn-secondary btn-sm" title="Query templates (Ctrl+T)">
+                &#x1F4CB; Templates
+              </button>
+              <button type="button" id="open-bookmarks-btn" class="btn btn-secondary btn-sm" title="My bookmarks">
+                &#x2605; Bookmarks
+              </button>
+              <button type="button" id="bookmark-query-btn" class="btn btn-secondary btn-sm" title="Save bookmark (Ctrl+S)">
+                &#x1F516; Save
+              </button>
+            </div>
+          </div>
 
           <div id="editor" class="monaco-editor-box"></div>
           <textarea name="query" id="query" hidden></textarea>
+          <input type="hidden" name="page" id="page-input" value="1">
 
-          <button type="submit">&#9654; Run Query</button>
+          <div class="run-bar">
+            <button type="submit" id="run-btn" class="btn btn-primary">
+              <span id="run-spinner" class="spinner hidden"></span>
+              &#9654; Run Query
+            </button>
+            <span class="shortcut-hint">Ctrl+Enter</span>
+          </div>
         </form>
       </div>
 
       <!-- QUERY RESULT -->
-      <div id="output-section">
-        {% if result %}
-        <div class="card">
-          {% if result.error %}
-            <p class="error">&#10006; {{ result.error }}</p>
-          {% elif result.columns %}
-            <div class="table-scroll">
-            <table>
+      {% if result %}
+      <div class="card" id="output-section">
+        {% if result.error %}
+          <p class="error">&#10006; {{ result.error }}</p>
+        {% elif result.columns %}
+          <div class="result-header">
+            <span class="result-meta">
+              {{ result.rows | length }} row{% if result.rows|length != 1 %}s{% endif %}
+              shown
+              {% if total_rows > result.rows | length %}
+                of {{ total_rows }} total
+              {% endif %}
+              {% if result.execution_time is not none %}
+                &bull; {{ "%.3f"|format(result.execution_time) }}s
+              {% endif %}
+            </span>
+            <div class="export-actions">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="exportResults('csv')">
+                &#x2193; CSV
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="exportResults('json')">
+                &#x2193; JSON
+              </button>
+            </div>
+          </div>
+          <div class="table-scroll">
+          <table>
+            <thead>
               <tr>
                 {% for col in result.columns %}
                 <th>{{ col }}</th>
                 {% endfor %}
               </tr>
+            </thead>
+            <tbody>
               {% for row in result.rows %}
               <tr>
                 {% for item in row %}
@@ -55,27 +169,56 @@
                 {% endfor %}
               </tr>
               {% endfor %}
-            </table>
-            </div>
-          {% else %}
-            <p>&#10003; {{ result.message }}</p>
+            </tbody>
+          </table>
+          </div>
+          <!-- Pagination controls -->
+          {% if has_more or page > 1 %}
+          <div class="pagination">
+            {% if page > 1 %}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="goToPage({{ page - 1 }})">
+              &laquo; Prev
+            </button>
+            {% endif %}
+            <span class="page-info">Page {{ page }}</span>
+            {% if has_more %}
+            <button type="button" class="btn btn-secondary btn-sm" onclick="goToPage({{ page + 1 }})">
+              Next &raquo;
+            </button>
+            {% endif %}
+          </div>
           {% endif %}
-        </div>
+        {% else %}
+          <p class="success-msg">&#10003; {{ result.message }}</p>
         {% endif %}
       </div>
+      {% endif %}
 
     </div><!-- /editor-main -->
 
     <!-- RIGHT: Query History -->
     <div class="history-panel card">
-      <h4>Query History</h4>
+      <div class="history-header">
+        <h4>Query History</h4>
+        <input type="search" id="history-search" class="history-search" placeholder="&#x1F50D; Search…" aria-label="Search history">
+      </div>
       {% if history %}
+        <div id="history-items">
         {% for item in history %}
-        <div class="history-item" onclick="loadQuery({{ item.query | tojson }})">
-          <span class="history-db">{{ item.db_type }}</span>
-          {{ item.query }}
+        <div class="history-item" onclick="loadQuery({{ item.query | tojson }})" data-query="{{ item.query | e }}">
+          <div class="history-item-meta">
+            <span class="history-db history-db-{{ item.db_type }}">{{ item.db_type }}</span>
+            {% if item.execution_time is not none %}
+            <span class="history-time">{{ "%.3f"|format(item.execution_time) }}s</span>
+            {% endif %}
+            {% if not item.success %}
+            <span class="history-fail">&#10006;</span>
+            {% endif %}
+          </div>
+          <span class="history-query-text">{{ item.query }}</span>
         </div>
         {% endfor %}
+        </div>
       {% else %}
         <p class="history-empty">No history yet.</p>
       {% endif %}
@@ -85,33 +228,40 @@
 
 </div>
 
+<!-- Hidden export form -->
+<form id="export-form" method="post" action="/editor/export" style="display:none">
+  <input type="hidden" name="query" id="export-query">
+  <input type="hidden" name="database" id="export-db">
+  <input type="hidden" name="format" id="export-format">
+</form>
+
 <!-- MONACO EDITOR -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+<script src="/static/script.js"></script>
 <script>
-let editor;
-require.config({ paths:{vs:"https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs"}});
-require(["vs/editor/editor.main"], function(){
-  editor = monaco.editor.create(document.getElementById("editor"), {
-    value:{{ last_query | tojson }},
-    language:"sql",
-    theme:"vs-dark",
-    automaticLayout:true,
-    minimap:{enabled:false},
-    fontSize:14,
-    lineNumbers:"on",
-    wordWrap:"on"
+// Bootstrap Monaco and wire up the page
+require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
+require(["vs/editor/editor.main"], function () {
+  window.editor = monaco.editor.create(document.getElementById("editor"), {
+    value: {{ last_query | tojson }},
+    language: "sql",
+    theme: document.documentElement.dataset.theme === "light" ? "vs" : "vs-dark",
+    automaticLayout: true,
+    minimap: { enabled: false },
+    fontSize: 14,
+    lineNumbers: "on",
+    wordWrap: "on",
   });
+
+  // Ctrl+Enter → run query
+  window.editor.addCommand(
+    monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+    function () { document.getElementById("query-form").requestSubmit(); }
+  );
 });
-
-function saveQuery(){
-  document.getElementById("query").value = editor ? editor.getValue() : "";
-}
-
-function loadQuery(q){
-  if(editor){ editor.setValue(q); }
-}
 </script>
 
 </body>
 </html>
+
 
