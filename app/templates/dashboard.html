@@ -5,6 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SQL Practice Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .db-info-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
+        .db-info-card h3{margin:0 0 1rem;color:var(--accent,#7c3aed);}
+        .db-info-table{width:100%;border-collapse:collapse;}
+        .db-info-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border,#333);}
+        .db-info-table td:first-child{font-weight:600;color:var(--text-muted,#aaa);width:40%;}
+        .db-badge{display:inline-block;background:var(--accent,#7c3aed);color:#fff;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.8rem;text-transform:uppercase;}
+        .create-form-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
+        .create-form-card h3{margin:0 0 0.5rem;color:var(--accent,#7c3aed);}
+        .create-form-card p{color:var(--text-muted,#aaa);margin:0 0 1.5rem;font-size:0.9rem;}
+        .form-row{margin-bottom:1rem;}
+        .form-row label{display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;}
+        .form-row input,.form-row select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border,#333);border-radius:6px;background:var(--input-bg,#2a2a3e);color:inherit;font-size:0.95rem;box-sizing:border-box;}
+        .username-feedback{font-size:0.8rem;margin-top:0.3rem;min-height:1.2em;}
+        .username-feedback.ok{color:#4ade80;}
+        .username-feedback.err{color:#f87171;}
+        .password-strength{font-size:0.8rem;margin-top:0.3rem;}
+        .strength-bar{height:4px;border-radius:2px;margin-top:4px;transition:all 0.3s;}
+        .btn-create{width:100%;padding:0.8rem;background:var(--accent,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:0.5rem;}
+        .btn-create:disabled{opacity:0.5;cursor:not-allowed;}
+        .success-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;}
+        .success-modal-overlay.show{display:flex;}
+        .success-modal{background:var(--card-bg,#1e1e2e);border:1px solid var(--accent,#7c3aed);border-radius:12px;padding:2rem;max-width:480px;width:90%;max-height:85vh;overflow-y:auto;}
+        .success-modal h3{color:#4ade80;margin:0 0 1rem;}
+        .cred-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem;background:rgba(255,255,255,0.05);border-radius:6px;margin:0.4rem 0;font-family:monospace;font-size:0.85rem;}
+        .copy-btn{background:var(--accent,#7c3aed);color:#fff;border:none;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;}
+        .info-banner{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.9rem;color:var(--text-muted,#ccc);}
+    </style>
 </head>
 <body class="dashboard-bg">
 
@@ -39,14 +67,249 @@
     <main class="dash-main">
         <div class="dash-card fade-in">
             <div class="dash-welcome">Welcome {{ display_name }} &#x1F44B;</div>
-            <div class="dash-subtitle">Welcome to SQL Playground</div>
+            <div class="dash-subtitle">SQL Playground – Your Personal Sandbox</div>
+
+            {% if db_info %}
+            <!-- ── MODE 1: User has a sandbox database ── -->
+            <div class="db-info-card">
+                <h3>&#x1F5C4; Your Sandbox Database</h3>
+                <table class="db-info-table">
+                    <tr>
+                        <td>Type</td>
+                        <td><span class="db-badge">{{ db_info.db_type }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Database</td>
+                        <td><code>{{ db_info.db_name }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>Username</td>
+                        <td><code>{{ db_info.db_user }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>Host</td>
+                        <td><code>{{ db_info.db_host }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>Port</td>
+                        <td><code>{{ db_info.db_port }}</code></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="info-banner">
+                &#x2705; You have <strong>full SQL access</strong> to your personal database —
+                INSERT, UPDATE, DELETE, CREATE TABLE, and more are all supported.
+                Sample data (employees, products, orders) has been pre-loaded.
+            </div>
             <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn">
                 &#x25B6; Open SQL Editor
             </a>
+
+            {% else %}
+            <!-- ── MODE 2: No database yet – show creation form ── -->
+            <div class="info-banner">
+                &#x2728; Create your own isolated SQL sandbox database to practice
+                <strong>any SQL command</strong> — SELECT, INSERT, UPDATE, DELETE, CREATE, DROP and more.
+                You get one database per account, pre-loaded with sample data.
+            </div>
+
+            <div class="create-form-card">
+                <h3>&#x1F527; Set Up Your Sandbox Database</h3>
+                <p>Choose a username and password for your personal database account.</p>
+
+                <div class="form-row">
+                    <label for="db-type">Database Type</label>
+                    <select id="db-type">
+                        <option value="mysql">MySQL</option>
+                        <option value="postgres">PostgreSQL</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="db-username">Database Username</label>
+                    <input type="text" id="db-username" placeholder="e.g. john_doe" autocomplete="off"
+                           minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
+                    <div class="username-feedback" id="username-feedback"></div>
+                </div>
+
+                <div class="form-row">
+                    <label for="db-password">Database Password</label>
+                    <input type="password" id="db-password" placeholder="Min 8 characters" autocomplete="new-password">
+                    <div class="password-strength" id="pw-strength-text"></div>
+                    <div class="strength-bar" id="pw-strength-bar" style="width:0;background:#f87171"></div>
+                </div>
+
+                <div class="form-row">
+                    <label for="db-password-confirm">Confirm Password</label>
+                    <input type="password" id="db-password-confirm" placeholder="Repeat password" autocomplete="new-password">
+                    <div class="username-feedback" id="pw-confirm-feedback"></div>
+                </div>
+
+                <button class="btn-create" id="btn-create" disabled>Create My Database</button>
+                <div id="create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
+            </div>
+            {% endif %}
+
         </div>
     </main>
 
+    <!-- ── Success Modal ── -->
+    <div class="success-modal-overlay" id="successModal">
+        <div class="success-modal">
+            <h3>&#x1F389; Database Created!</h3>
+            <p>Your sandbox database is ready. Here are your connection details:</p>
+            <div id="modal-creds"></div>
+            <div class="info-banner" style="margin-top:1rem;">
+                &#x1F512; Save these credentials — the password will not be shown again in plain text.
+            </div>
+            <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn" style="display:block;text-align:center;margin-top:1rem;">
+                &#x25B6; Open SQL Editor
+            </a>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='dashboard.js') }}" data-username="{{ display_name | e }}"></script>
+    <script>
+    (function () {
+        var usernameInput = document.getElementById('db-username');
+        var passwordInput = document.getElementById('db-password');
+        var confirmInput  = document.getElementById('db-password-confirm');
+        var dbTypeSelect  = document.getElementById('db-type');
+        var createBtn     = document.getElementById('btn-create');
+        var uFeedback     = document.getElementById('username-feedback');
+        var pwStrText     = document.getElementById('pw-strength-text');
+        var pwStrBar      = document.getElementById('pw-strength-bar');
+        var pwConfirm     = document.getElementById('pw-confirm-feedback');
+        var createError   = document.getElementById('create-error');
+
+        if (!usernameInput) return;  // mode 1 – no form present
+
+        var usernameOk = false;
+        var passwordOk = false;
+        var confirmOk  = false;
+        var checkTimeout;
+
+        function updateBtn() {
+            createBtn.disabled = !(usernameOk && passwordOk && confirmOk);
+        }
+
+        // Live username availability check (debounced)
+        usernameInput.addEventListener('input', function () {
+            var val = this.value.trim();
+            uFeedback.className = 'username-feedback';
+            uFeedback.textContent = '';
+            usernameOk = false;
+            updateBtn();
+            clearTimeout(checkTimeout);
+            if (val.length < 3) return;
+            uFeedback.textContent = 'Checking…';
+            checkTimeout = setTimeout(function () {
+                var db = dbTypeSelect ? dbTypeSelect.value : 'mysql';
+                fetch('/api/check-username?username=' + encodeURIComponent(val) + '&db_type=' + db)
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.available) {
+                            uFeedback.textContent = '✓ Username available';
+                            uFeedback.className = 'username-feedback ok';
+                            usernameOk = true;
+                        } else {
+                            uFeedback.textContent = '✗ Username taken or invalid';
+                            uFeedback.className = 'username-feedback err';
+                            usernameOk = false;
+                        }
+                        updateBtn();
+                    })
+                    .catch(function () { uFeedback.textContent = ''; });
+            }, 500);
+        });
+
+        dbTypeSelect && dbTypeSelect.addEventListener('change', function () {
+            if (usernameInput.value.trim().length >= 3) {
+                usernameInput.dispatchEvent(new Event('input'));
+            }
+        });
+
+        // Password strength
+        passwordInput.addEventListener('input', function () {
+            var pw = this.value;
+            var strength = 0;
+            if (pw.length >= 8)  strength++;
+            if (/[A-Z]/.test(pw)) strength++;
+            if (/[0-9]/.test(pw)) strength++;
+            if (/[^A-Za-z0-9]/.test(pw)) strength++;
+            var labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+            var colors = ['#f87171','#f87171','#fb923c','#facc15','#4ade80'];
+            pwStrText.textContent = pw.length ? labels[strength] : '';
+            pwStrBar.style.width  = (strength * 25) + '%';
+            pwStrBar.style.background = colors[strength];
+            passwordOk = pw.length >= 8;
+            updateBtn();
+            // re-check confirm
+            if (confirmInput.value) confirmInput.dispatchEvent(new Event('input'));
+        });
+
+        confirmInput.addEventListener('input', function () {
+            if (this.value === passwordInput.value) {
+                pwConfirm.textContent = '✓ Passwords match';
+                pwConfirm.className = 'username-feedback ok';
+                confirmOk = true;
+            } else {
+                pwConfirm.textContent = '✗ Passwords do not match';
+                pwConfirm.className = 'username-feedback err';
+                confirmOk = false;
+            }
+            updateBtn();
+        });
+
+        createBtn.addEventListener('click', function () {
+            createBtn.disabled = true;
+            createBtn.textContent = 'Creating…';
+            createError.textContent = '';
+
+            fetch('/api/create-database', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    db_type:  dbTypeSelect ? dbTypeSelect.value : 'mysql',
+                    username: usernameInput.value.trim(),
+                    password: passwordInput.value,
+                })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) {
+                    var info = d.db_info;
+                    var credsHtml = '';
+                    var pairs = [
+                        ['Type',     info.db_type],
+                        ['Database', info.db_name],
+                        ['Username', info.db_user],
+                        ['Host',     info.db_host],
+                        ['Port',     info.db_port],
+                        ['Password', passwordInput.value],
+                    ];
+                    pairs.forEach(function (p) {
+                        credsHtml += '<div class="cred-row"><span>' + p[0] + '</span>'
+                            + '<span>' + p[1] + '</span>'
+                            + '<button class="copy-btn" onclick="navigator.clipboard.writeText(\'' + p[1] + '\')">Copy</button>'
+                            + '</div>';
+                    });
+                    document.getElementById('modal-creds').innerHTML = credsHtml;
+                    document.getElementById('successModal').classList.add('show');
+                } else {
+                    createError.textContent = d.error || 'Failed to create database.';
+                    createBtn.disabled = false;
+                    createBtn.textContent = 'Create My Database';
+                }
+            })
+            .catch(function (e) {
+                createError.textContent = 'Network error. Please try again.';
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create My Database';
+            });
+        });
+    })();
+    </script>
 </body>
 </html>
 

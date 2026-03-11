@@ -20,8 +20,20 @@ def _migrate(conn):
         ("name", "TEXT"),
         ("picture", "TEXT"),
         ("google_id", "TEXT"),
+        # Per-user sandbox database tracking
+        ("db_created", "INTEGER"),
+        ("db_type", "TEXT"),
+        ("db_name", "TEXT"),
+        ("db_user", "TEXT"),
+        ("db_password", "TEXT"),
+        ("db_host", "TEXT"),
+        ("db_port", "INTEGER"),
     ]
-    _allowed_user_cols = {"name", "picture", "google_id"}
+    _allowed_user_cols = {
+        "name", "picture", "google_id",
+        "db_created", "db_type", "db_name", "db_user",
+        "db_password", "db_host", "db_port",
+    }
     _allowed_types = {"TEXT", "INTEGER", "REAL", "BLOB", "NUMERIC"}
     for col, col_type in user_columns:
         if col not in existing_users:
@@ -68,7 +80,15 @@ def init_db():
                 password  TEXT NOT NULL DEFAULT '',
                 name      TEXT,
                 picture   TEXT,
-                google_id TEXT
+                google_id TEXT,
+                -- Per-user sandbox database tracking
+                db_created  INTEGER NOT NULL DEFAULT 0,
+                db_type     TEXT,
+                db_name     TEXT,
+                db_user     TEXT,
+                db_password TEXT,
+                db_host     TEXT,
+                db_port     INTEGER
             )
             """
         )
