@@ -210,8 +210,14 @@ def _mysql_username_available(username: str) -> bool:
 
 
 def _create_mysql_db(db_name: str, username: str, password: str) -> dict:
-    """Create *db_name* database and *username* user, load sample data."""
-    # Identifiers validated by _USERNAME_RE – safe to interpolate directly
+    """Create *db_name* database and *username* user, load sample data.
+
+    Both *db_name* and *username* are validated by _USERNAME_RE before this
+    function is called (lowercase alphanumeric + underscore, 3–30 chars,
+    must start with a letter).  MySQL does not support parameterised
+    identifiers, so they are interpolated directly after validation – the
+    regex ensures no SQL special characters are present.
+    """
     conn = _mysql_conn(MYSQL_ADMIN_CONFIG)
     conn.autocommit = True
     cur = conn.cursor()
@@ -258,13 +264,26 @@ def _pg_username_available(username: str) -> bool:
 
 
 def _create_pg_db(db_name: str, username: str, password: str) -> dict:
-    """Create *db_name* database and *username* role, load sample data."""
+    """Create *db_name* database and *username* role, load sample data.
+
+    Uses ``psycopg2.sql.Identifier`` to safely quote identifiers, which
+    prevents SQL injection even if the validation logic is ever changed.
+    """
+    from psycopg2 import sql as pgsql  # type: ignore
+
     conn = _pg_conn(POSTGRES_ADMIN_CONFIG)
     conn.autocommit = True
     cur = conn.cursor()
     try:
-        cur.execute(f"CREATE USER {username} WITH PASSWORD %s", (password,))
-        cur.execute(f"CREATE DATABASE {db_name} OWNER {username}")
+        cur.execute(
+            pgsql.SQL("CREATE USER {} WITH PASSWORD %s").format(pgsql.Identifier(username)),
+            (password,),
+        )
+        cur.execute(
+            pgsql.SQL("CREATE DATABASE {} OWNER {}").format(
+                pgsql.Identifier(db_name), pgsql.Identifier(username)
+            )
+        )
     finally:
         cur.close()
         conn.close()
@@ -291,7 +310,11 @@ def _create_pg_db(db_name: str, username: str, password: str) -> dict:
     conn3.autocommit = True
     cur3 = conn3.cursor()
     try:
-        cur3.execute(f"GRANT ALL PRIVILEGES ON DATABASE {db_name} TO {username}")
+        cur3.execute(
+            pgsql.SQL("GRANT ALL PRIVILEGES ON DATABASE {} TO {}").format(
+                pgsql.Identifier(db_name), pgsql.Identifier(username)
+            )
+        )
     finally:
         cur3.close()
         conn3.close()

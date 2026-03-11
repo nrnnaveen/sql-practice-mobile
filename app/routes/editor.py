@@ -171,7 +171,10 @@ def editor():
 
         if query:
             if sandbox_db:
-                # Sandbox mode: no SQL restrictions, use personal database
+                # Sandbox mode: the user has their own isolated database, so all SQL
+                # commands (INSERT, UPDATE, DELETE, DROP, CREATE, …) are allowed.
+                # There is no shared data at risk – queries run only against the user's
+                # personal sandbox that was provisioned exclusively for them.
                 start_time = time.time()
                 raw_result = _run_sandbox_query(sandbox_db, query)
                 elapsed = round(time.time() - start_time, 3)

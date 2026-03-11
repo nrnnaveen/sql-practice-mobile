@@ -160,7 +160,7 @@
             <p>Your sandbox database is ready. Here are your connection details:</p>
             <div id="modal-creds"></div>
             <div class="info-banner" style="margin-top:1rem;">
-                &#x1F512; Save these credentials — the password will not be shown again in plain text.
+                &#x1F512; Save these credentials — the password will not be shown again in plaintext.
             </div>
             <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn" style="display:block;text-align:center;margin-top:1rem;">
                 &#x25B6; Open SQL Editor
@@ -279,22 +279,41 @@
             .then(function (d) {
                 if (d.success) {
                     var info = d.db_info;
-                    var credsHtml = '';
                     var pairs = [
                         ['Type',     info.db_type],
                         ['Database', info.db_name],
                         ['Username', info.db_user],
                         ['Host',     info.db_host],
-                        ['Port',     info.db_port],
+                        ['Port',     String(info.db_port)],
                         ['Password', passwordInput.value],
                     ];
+                    var container = document.getElementById('modal-creds');
+                    container.innerHTML = '';
                     pairs.forEach(function (p) {
-                        credsHtml += '<div class="cred-row"><span>' + p[0] + '</span>'
-                            + '<span>' + p[1] + '</span>'
-                            + '<button class="copy-btn" onclick="navigator.clipboard.writeText(\'' + p[1] + '\')">Copy</button>'
-                            + '</div>';
+                        var row = document.createElement('div');
+                        row.className = 'cred-row';
+
+                        var label = document.createElement('span');
+                        label.textContent = p[0];
+
+                        var value = document.createElement('span');
+                        value.textContent = p[1];
+
+                        var btn = document.createElement('button');
+                        btn.className = 'copy-btn';
+                        btn.textContent = 'Copy';
+                        // Use a closure to capture the correct value
+                        (function (v) {
+                            btn.addEventListener('click', function () {
+                                navigator.clipboard.writeText(v);
+                            });
+                        })(p[1]);
+
+                        row.appendChild(label);
+                        row.appendChild(value);
+                        row.appendChild(btn);
+                        container.appendChild(row);
                     });
-                    document.getElementById('modal-creds').innerHTML = credsHtml;
                     document.getElementById('successModal').classList.add('show');
                 } else {
                     createError.textContent = d.error || 'Failed to create database.';

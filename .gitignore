@@ -21,7 +21,9 @@ ENV/
 !.env.example
 
 # ── Database files ────────────────────────────────────────────────────────────
-database/
+database/*.db
+database/*.sqlite
+database/*.sqlite3
 *.db
 *.sqlite
 *.sqlite3
