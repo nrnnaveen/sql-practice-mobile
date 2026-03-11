@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profile – SQL Playground</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-bg">
+
+    <!-- ── Navbar ── -->
+    <nav class="dash-nav">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="dash-nav-brand">&#x25A0; SQL Playground</a>
+        <div class="profile-menu-wrapper">
+            <button class="profile-avatar-btn" id="avatarBtn" aria-label="Profile menu" aria-expanded="false">
+                {% if user.picture %}
+                    <img src="{{ user.picture }}" alt="Avatar" class="profile-avatar-img">
+                {% else %}
+                    <span class="profile-avatar-initials">{{ (user.name or user.email)[0] | upper }}</span>
+                {% endif %}
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" role="menu">
+                <a href="{{ url_for('profile.profile') }}" class="profile-dropdown-item" role="menuitem">
+                    <span>&#x1F464;</span> Profile
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="profile-dropdown-item profile-dropdown-logout" role="menuitem">
+                    <span>&#x23FB;</span> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dash-main">
+        <div class="dash-card fade-in profile-card">
+            <h2 class="profile-heading">&#x1F464; Your Profile</h2>
+
+            <!-- Avatar preview -->
+            <div class="profile-avatar-preview-wrapper">
+                <div class="profile-avatar-preview" id="avatarPreview">
+                    {% if user.picture %}
+                        <img src="{{ user.picture }}" alt="Profile picture" id="avatarPreviewImg">
+                    {% else %}
+                        <span class="profile-avatar-big-initials" id="avatarPreviewInitials">{{ (user.name or user.email)[0] | upper }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="profile-alert profile-alert-error">{{ error }}</div>
+            {% endif %}
+            {% if success %}
+            <div class="profile-alert profile-alert-success">{{ success }}</div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" class="profile-form">
+                <label class="profile-label" for="name">Display Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    class="profile-input"
+                    value="{{ user.name or '' }}"
+                    placeholder="Enter your display name"
+                    maxlength="64"
+                >
+
+                <label class="profile-label" for="avatar">Profile Picture</label>
+                <input
+                    type="file"
+                    id="avatar"
+                    name="avatar"
+                    class="profile-file-input"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                >
+                <p class="profile-hint">Max 2 MB. PNG, JPG, GIF or WEBP.</p>
+
+                <button type="submit" class="dash-editor-btn profile-save-btn">Save Changes</button>
+            </form>
+
+            <div class="profile-meta">
+                <span class="profile-email-label">Email:</span>
+                <span class="profile-email">{{ user.email }}</span>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='profile.js') }}"></script>
+</body>
+</html>

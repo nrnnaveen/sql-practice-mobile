@@ -1,30 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SQL Practice Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="dashboard-bg">
 
-<div class="container">
+    <!-- ── Navbar ── -->
+    <nav class="dash-nav">
+        <span class="dash-nav-brand">&#x25A0; SQL Playground</span>
+        <div class="profile-menu-wrapper">
+            <button class="profile-avatar-btn" id="avatarBtn" aria-label="Profile menu" aria-expanded="false">
+                {% if user.picture %}
+                    <img src="{{ user.picture }}" alt="Avatar" class="profile-avatar-img">
+                {% else %}
+                    <span class="profile-avatar-initials">{{ display_name[0] | upper }}</span>
+                {% endif %}
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" role="menu">
+                <a href="{{ url_for('profile.profile') }}" class="profile-dropdown-item" role="menuitem">
+                    <span>&#x1F464;</span> Profile
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="profile-dropdown-item profile-dropdown-logout" role="menuitem">
+                    <span>&#x23FB;</span> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
 
-    <div class="editor-header">
-        <h2>SQL Practice</h2>
-        <a href="/logout" class="logout-btn" title="Logout">&#x23FB;</a>
+    <!-- ── Greeting popup bubble ── -->
+    <div class="greeting-bubble" id="greetingBubble" aria-live="polite">
+        Hi {{ display_name }} &#x1F44B; Ready to practice SQL?
     </div>
 
-    <div class="card" style="text-align:center;">
-        <h2>Welcome to SQL Playground</h2>
+    <!-- ── Main content ── -->
+    <main class="dash-main">
+        <div class="dash-card fade-in">
+            <div class="dash-welcome">Welcome {{ display_name }} &#x1F44B;</div>
+            <div class="dash-subtitle">Welcome to SQL Playground</div>
+            <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn">
+                &#x25B6; Open SQL Editor
+            </a>
+        </div>
+    </main>
 
-        <a href="/editor">
-            <button style="margin-top:20px; max-width:300px;">&#9654; Open SQL Editor</button>
-        </a>
-    </div>
-
-</div>
-
+    <script src="{{ url_for('static', filename='dashboard.js') }}" data-username="{{ display_name | e }}"></script>
 </body>
 </html>
 

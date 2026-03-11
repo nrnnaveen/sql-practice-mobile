@@ -9,6 +9,19 @@ if not os.environ.get("SECRET_KEY"):
         "Using an insecure default – set SECRET_KEY in production!"
     )
 
+# ── Google OAuth 2.0 ─────────────────────────────────────────────────────────
+# Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET as environment variables.
+# For localhost dev, add http://127.0.0.1:5000/login/google/callback as an
+# authorised redirect URI in the Google Cloud Console.
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+
+if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+    logging.warning(
+        "GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set. "
+        "Google Sign-In will be disabled."
+    )
+
 # ── MySQL ────────────────────────────────────────────────────────────────────
 # On Railway, set MYSQL_HOST / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DATABASE as
 # environment variables. When those are absent the app falls back to localhost so
