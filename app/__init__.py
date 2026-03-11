@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import timedelta
 
-from flask import Flask
+from flask import Flask, render_template, session
 from authlib.integrations.flask_client import OAuth
 
 oauth = OAuth()
@@ -28,11 +28,16 @@ def create_app():
     app.config["GOOGLE_CLIENT_ID"] = GOOGLE_CLIENT_ID
     app.config["GOOGLE_CLIENT_SECRET"] = GOOGLE_CLIENT_SECRET
 
-    # Configure logging so deployment issues are visible in Railway logs
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    # Logging: JSON format in production, plain text in development
+    is_production = os.environ.get("FLASK_DEBUG", "0") != "1"
+    if is_production:
+        from app.utils.logger import configure_logging
+        configure_logging()
+    else:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        )
 
     # Initialise Authlib OAuth
     oauth.init_app(app)
@@ -53,10 +58,25 @@ def create_app():
     from app.routes.dashboard import dashboard_bp
     from app.routes.editor import editor_bp
     from app.routes.profile import profile_bp
+    from app.routes.api import api_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(editor_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(api_bp)
+
+    # Security headers for every response
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+    # Custom 404 handler
+    @app.errorhandler(404)
+    def page_not_found(exc):
+        return render_template("404.html", session=session), 404
 
     return app
