@@ -147,3 +147,39 @@ html, body {
   touch-action: pan-y;
   overscroll-behavior-y: contain;
 }
+
+/* MATRIX LOGIN PAGE ONLY */
+
+.login-page {
+  background: black;
+}
+
+.login-page #matrix{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.login-page .card{
+  background: rgba(0,0,0,0.85);
+  color: #00ff00;
+  border: 1px solid #00ff00;
+}
+
+.login-page input{
+  background: black;
+  border: 1px solid #00ff00;
+  color: #00ff00;
+}
+
+.login-page button{
+  background: #00ff00;
+  color: black;
+}
+
+.login-page a{
+  color: #00ff00;
+}
