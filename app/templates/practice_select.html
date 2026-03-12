@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Select Difficulty – {{ db_type | upper }} Practice</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  .practice-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;}
+  .practice-header h2{margin:0;font-size:1.4rem;}
+  .back-link{color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem;}
+  .back-link:hover{color:inherit;}
+  .diff-grid{display:grid;gap:1rem;margin-top:1.5rem;}
+  .diff-card{background:var(--card-bg,#1e1e2e);border:2px solid var(--border,#333);border-radius:12px;padding:1.5rem;text-decoration:none;color:inherit;transition:border-color 0.2s,transform 0.15s;display:block;}
+  .diff-card:hover{transform:translateY(-2px);}
+  .diff-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .diff-title{display:flex;align-items:center;gap:0.6rem;font-size:1.1rem;font-weight:700;}
+  .diff-count{font-size:0.85rem;color:var(--text-muted,#aaa);}
+  .progress-bar-wrap{background:rgba(255,255,255,0.1);border-radius:999px;height:8px;margin-bottom:0.6rem;overflow:hidden;}
+  .progress-bar-fill{height:8px;border-radius:999px;transition:width 0.4s ease;}
+  .progress-label{font-size:0.8rem;color:var(--text-muted,#aaa);display:flex;justify-content:space-between;}
+  .complete-badge{background:#4ade80;color:#000;font-size:0.75rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:999px;}
+  .start-hint{font-size:0.85rem;color:var(--text-muted,#aaa);margin-top:0.75rem;}
+  .db-badge-lg{display:inline-block;padding:0.3rem 0.9rem;border-radius:6px;font-weight:700;font-size:0.85rem;text-transform:uppercase;color:#fff;}
+  .db-badge-lg.mysql{background:#f59e0b;}
+  .db-badge-lg.postgres{background:#3b82f6;}
+</style>
+</head>
+<body class="dashboard-bg">
+
+<nav class="dash-nav">
+  <span class="dash-nav-brand">&#x25A0; SQL Playground</span>
+  <div style="display:flex;gap:0.75rem;align-items:center;">
+    <a href="{{ url_for('dashboard.dashboard') }}" class="back-link">&#x2190; Dashboard</a>
+    <a href="{{ url_for('auth.logout') }}" style="color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;">&#x23FB;</a>
+  </div>
+</nav>
+
+<main class="dash-main">
+  <div class="dash-card fade-in">
+
+    <div class="practice-header">
+      <span class="db-badge-lg {{ db_type }}">{{ db_type | upper }}</span>
+      <h2>&#x1F4DA; Practice with Questions</h2>
+    </div>
+    <p style="color:var(--text-muted,#aaa);margin:0 0 0.5rem;">
+      Select a difficulty level to start or continue practicing.
+      Your progress is automatically saved after each question.
+    </p>
+    <p style="color:var(--text-muted,#aaa);font-size:0.85rem;margin:0;">
+      Database: <code>{{ db_name }}</code>
+    </p>
+
+    <div class="diff-grid">
+      {% for d in difficulties %}
+      <a href="{{ url_for('practice.practice_start', db_type=db_type, difficulty=d.key) }}"
+         class="diff-card"
+         style="border-color:{{ d.color }}33;">
+        <div class="diff-card-header">
+          <div class="diff-title">
+            <span style="font-size:1.3rem;">{{ d.emoji }}</span>
+            <span style="color:{{ d.color }};">{{ d.label }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="diff-count">{{ d.total }} Questions</span>
+            {% if d.is_complete %}
+            <span class="complete-badge">&#x2713; Complete</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill"
+               style="width:{{ ((d.completed / d.total) * 100) | int }}%;background:{{ d.color }};"></div>
+        </div>
+        <div class="progress-label">
+          <span>{{ d.completed }}/{{ d.total }} completed</span>
+          {% if d.completed > 0 and not d.is_complete %}
+          <span>Continue at Q{{ d.current_question }}</span>
+          {% elif d.completed == 0 %}
+          <span>Not started</span>
+          {% else %}
+          <span>&#x1F3C6; Finished!</span>
+          {% endif %}
+        </div>
+
+        <p class="start-hint">
+          {% if d.is_complete %}
+          &#x1F501; Click to review or restart
+          {% elif d.completed > 0 %}
+          &#x25B6; Continue from Question {{ d.current_question }}
+          {% else %}
+          &#x25B6; Start practicing
+          {% endif %}
+        </p>
+      </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

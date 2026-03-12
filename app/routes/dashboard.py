@@ -7,8 +7,16 @@ from app.services.db_admin_service import (
     get_user_db_info,
     is_username_available,
 )
+from app.services.progress_service import get_all_progress
+from app.services.question_service import get_questions
 
 dashboard_bp = Blueprint("dashboard", __name__)
+
+# Question counts per difficulty level (used in dashboard template)
+_DIFFICULTY_TOTALS = {
+    diff: len(get_questions("mysql", diff))
+    for diff in ("beginner", "moderate", "master")
+}
 
 
 def _get_display_name(user, login_type):
@@ -45,6 +53,9 @@ def dashboard():
     # backward-compat: db_info = first available DB (mysql preferred)
     db_info = mysql_db or postgres_db
 
+    # Practice progress for dashboard display
+    practice_progress = get_all_progress(session["user_id"])
+
     return render_template(
         "dashboard.html",
         user=user,
@@ -53,6 +64,8 @@ def dashboard():
         db_info=db_info,
         mysql_db=mysql_db,
         postgres_db=postgres_db,
+        practice_progress=practice_progress,
+        difficulty_totals=_DIFFICULTY_TOTALS,
     )
 
 

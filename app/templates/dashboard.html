@@ -42,6 +42,13 @@
         .practice-btn.mysql-btn:hover{background:#d97706;}
         .practice-btn.postgres-btn{background:#3b82f6;}
         .practice-btn.postgres-btn:hover{background:#2563eb;}
+        .practice-btn.workbench-btn{background:#6b7280;}
+        .practice-btn.workbench-btn:hover{background:#4b5563;}
+        .practice-options{display:flex;flex-direction:column;gap:0.5rem;}
+        .progress-summary{margin-top:0.75rem;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border,#333);}
+        .progress-summary-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#aaa);margin-bottom:0.4rem;}
+        .progress-continue-link{display:block;font-size:0.85rem;color:var(--accent,#7c3aed);text-decoration:none;padding:0.2rem 0;}
+        .progress-continue-link:hover{text-decoration:underline;}
         .dual-db-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
         @media(max-width:600px){.dual-db-grid{grid-template-columns:1fr;}}
     </style>
@@ -92,7 +99,7 @@
                 <!-- ── MySQL Section ── -->
                 <div>
                 {% if mysql_db %}
-                    <!-- MySQL database exists: show info + Practice button -->
+                    <!-- MySQL database exists: show info + Practice/Workbench buttons -->
                     <div class="db-info-card">
                         <div class="db-section-header">
                             <span class="db-badge mysql">MySQL</span>
@@ -104,9 +111,31 @@
                             <tr><td>Host</td><td><code>{{ mysql_db.db_host }}</code></td></tr>
                             <tr><td>Port</td><td><code>{{ mysql_db.db_port }}</code></td></tr>
                         </table>
-                        <a href="{{ url_for('editor.editor_mysql') }}" class="practice-btn mysql-btn">
-                            &#x25B6; Practice MySQL
-                        </a>
+                        <div class="practice-options">
+                            <a href="{{ url_for('practice.select_difficulty', db_type='mysql') }}" class="practice-btn mysql-btn">
+                                &#x1F4DA; Practice MySQL with Questions
+                            </a>
+                            <a href="{{ url_for('editor.editor_mysql') }}" class="practice-btn workbench-btn">
+                                &#x1F6E0; MySQL Workbench
+                            </a>
+                        </div>
+                        {% if practice_progress %}
+                        {% set mysql_progress = practice_progress | selectattr('db_type', 'equalto', 'mysql') | list %}
+                        {% if mysql_progress %}
+                        <div class="progress-summary">
+                            <div class="progress-summary-label">Your Progress:</div>
+                            {% for p in mysql_progress %}
+                            {% if p.completed_count > 0 %}
+                            <a href="{{ url_for('practice.practice_start', db_type='mysql', difficulty=p.difficulty) }}"
+                               class="progress-continue-link">
+                                &#x25B6; Continue {{ p.difficulty | capitalize }}
+                                ({{ p.completed_count }}/{{ difficulty_totals.get(p.difficulty, '?') }})
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
                     </div>
                 {% else %}
                     <!-- No MySQL DB: show create form -->
@@ -148,7 +177,7 @@
                 <!-- ── PostgreSQL Section ── -->
                 <div>
                 {% if postgres_db %}
-                    <!-- PostgreSQL database exists: show info + Practice button -->
+                    <!-- PostgreSQL database exists: show info + Practice/Workbench buttons -->
                     <div class="db-info-card">
                         <div class="db-section-header">
                             <span class="db-badge postgres">PostgreSQL</span>
@@ -160,9 +189,31 @@
                             <tr><td>Host</td><td><code>{{ postgres_db.db_host }}</code></td></tr>
                             <tr><td>Port</td><td><code>{{ postgres_db.db_port }}</code></td></tr>
                         </table>
-                        <a href="{{ url_for('editor.editor_postgresql') }}" class="practice-btn postgres-btn">
-                            &#x25B6; Practice PostgreSQL
-                        </a>
+                        <div class="practice-options">
+                            <a href="{{ url_for('practice.select_difficulty', db_type='postgres') }}" class="practice-btn postgres-btn">
+                                &#x1F4DA; Practice PostgreSQL with Questions
+                            </a>
+                            <a href="{{ url_for('editor.editor_postgresql') }}" class="practice-btn workbench-btn">
+                                &#x1F6E0; PostgreSQL Workbench
+                            </a>
+                        </div>
+                        {% if practice_progress %}
+                        {% set pg_progress = practice_progress | selectattr('db_type', 'equalto', 'postgres') | list %}
+                        {% if pg_progress %}
+                        <div class="progress-summary">
+                            <div class="progress-summary-label">Your Progress:</div>
+                            {% for p in pg_progress %}
+                            {% if p.completed_count > 0 %}
+                            <a href="{{ url_for('practice.practice_start', db_type='postgres', difficulty=p.difficulty) }}"
+                               class="progress-continue-link">
+                                &#x25B6; Continue {{ p.difficulty | capitalize }}
+                                ({{ p.completed_count }}/{{ difficulty_totals.get(p.difficulty, '?') }})
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
                     </div>
                 {% else %}
                     <!-- No PostgreSQL DB: show create form -->
