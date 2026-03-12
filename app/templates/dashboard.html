@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SQL Practice Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/creator_modal.css') }}">
     <style>
         .db-info-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
         .db-info-card h3{margin:0 0 1rem;color:var(--accent,#7c3aed);}
@@ -468,6 +469,9 @@
         });
     })();
     </script>
+
+    {% include 'partials/creator_info_modal.html' %}
+    <script src="{{ url_for('static', filename='js/creator_info.js') }}"></script>
 </body>
 </html>
 
