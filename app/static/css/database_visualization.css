@@ -47,6 +47,7 @@
 .dbviz-table.hl-create {
   border-color: #9C27B0;
   box-shadow: 0 0 20px rgba(156, 39, 176, 0.35);
+  /* scalePop keyframe is defined in animations.css */
   animation: scalePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 .dbviz-table.hl-alter {

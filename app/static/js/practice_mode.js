@@ -97,10 +97,10 @@
 
       var wrap = document.getElementById('nextBtnWrap');
       if (data.all_complete) {
-        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/complete" class="btn-next">🏆 View Certificate!</a>';
+        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/complete" class="btn-next">&#x1F3C6; View Certificate!</a>';
       } else {
         var nextQ = data.next_question || (Q_ID + 1);
-        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + nextQ + '" class="btn-next">Next Question →</a>';
+        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + nextQ + '" class="btn-next">Next Question &#x2192;</a>';
       }
 
       if (data.completed_ids) {

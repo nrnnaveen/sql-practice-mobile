@@ -20,7 +20,7 @@ _VALID_DIFFICULTIES = {"beginner", "moderate", "master"}
 
 def _require_auth():
     if "user_id" not in session:
-        return jsonify({"error": "Not authenticated"}), 401
+        return jsonify({"error": "Authentication required"}), 401
     return None
 
 
