@@ -184,7 +184,7 @@
             <span id="runSpinner" class="spinner hidden"></span>
             &#x25B6; Run Query
           </button>
-          <button class="btn-secondary" onclick="clearEditor()">&#x21BA; Reset</button>
+          <button class="btn-secondary clear-btn" id="clear-button">&#x1F5D1; Clear</button>
           {% if is_completed %}
           <button class="sample-btn" onclick="toggleSampleAnswer()">&#x1F4D6; Sample Answer</button>
           {% endif %}
@@ -248,6 +248,7 @@
 <script src="{{ url_for('static', filename='js/visualizer_engine.js') }}"></script>
 <script src="{{ url_for('static', filename='js/progress_tracker.js') }}"></script>
 <script src="{{ url_for('static', filename='js/practice_mode.js') }}"></script>
+<script src="{{ url_for('static', filename='js/clear_button.js') }}"></script>
 
 <script>
 (function () {
@@ -271,6 +272,13 @@
       monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
       function () { runQuery(); }
     );
+
+    // Initialise Clear button via shared module
+    if (window.ClearButton) {
+      window.ClearButton.initClearButton(monacoEditor, {
+        historyListId: 'historyList',
+      });
+    }
   });
 
   function getQuery() {

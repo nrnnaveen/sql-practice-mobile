@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>{% if db_type_filter == 'mysql' %}MySQL{% elif db_type_filter == 'postgres' %}PostgreSQL{% elif sandbox_db %}{{ sandbox_db.db_name }}{% else %}SQL{% endif %} Editor – SQL Playground</title>
 <link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/css/animations.css">
+<link rel="stylesheet" href="/static/css/database_visualization.css">
 </head>
 <body>
 <div class="container">
@@ -142,6 +144,9 @@
               <span id="run-spinner" class="spinner hidden"></span>
               &#9654; Run Query
             </button>
+            <button type="button" id="clear-button" class="btn btn-danger clear-btn" title="Clear editor and results (Ctrl+Alt+C)">
+              &#x1F5D1; Clear
+            </button>
             <span class="shortcut-hint">Ctrl+Enter</span>
           </div>
         </form>
@@ -259,6 +264,11 @@
 <!-- MONACO EDITOR -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
 <script src="/static/script.js"></script>
+<!-- Animation and visualizer scripts -->
+<script src="/static/js/query_parser.js"></script>
+<script src="/static/js/animations.js"></script>
+<script src="/static/js/visualizer_engine.js"></script>
+<script src="/static/js/clear_button.js"></script>
 <script>
 // Bootstrap Monaco and wire up the page
 require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
@@ -279,6 +289,15 @@ require(["vs/editor/editor.main"], function () {
     monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
     function () { document.getElementById("query-form").requestSubmit(); }
   );
+
+  // Initialise Clear button (clears editor + output-section)
+  if (window.ClearButton) {
+    window.ClearButton.initClearButton(window.editor, {
+      resultsPanelId: 'output-section',
+      historyListId: 'history-items',
+      toastFn: window.showToast || null,
+    });
+  }
 });
 
 // Pass current db_type to the templates loader so it fetches the right set
