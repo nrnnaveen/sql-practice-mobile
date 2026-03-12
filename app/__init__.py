@@ -55,6 +55,8 @@ def create_app():
     from app.routes.profile import profile_bp
     from app.routes.api import api_bp
     from app.routes.practice import practice_bp
+    from app.routes.api_questions import api_questions_bp
+    from app.routes.api_progress import api_progress_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -62,5 +64,7 @@ def create_app():
     app.register_blueprint(profile_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(practice_bp)
+    app.register_blueprint(api_questions_bp)
+    app.register_blueprint(api_progress_bp)
 
     return app

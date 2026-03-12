@@ -25,6 +25,8 @@ from app.services.progress_service import (
     mark_question_complete,
     reset_progress,
 )
+from app.services.query_parser_service import parse_query_type
+from app.services.visualizer_service import get_animation_data
 from app.utils.db_init import DB_PATH
 
 practice_bp = Blueprint("practice", __name__)
@@ -302,6 +304,11 @@ def practice_run(db_type, difficulty, qid):
         # Serialize rows to plain lists (tuples not JSON serialisable)
         if "rows" in raw_result:
             raw_result["rows"] = [list(r) for r in raw_result["rows"]]
+
+    # Attach query type and animation data for the frontend visualizer
+    query_type = parse_query_type(query)
+    raw_result["query_type"] = query_type
+    raw_result["animation_data"] = get_animation_data(query_type)
 
     return jsonify(raw_result)
 

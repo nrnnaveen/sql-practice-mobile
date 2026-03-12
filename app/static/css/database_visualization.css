@@ -1,0 +1,185 @@
+/* ============================================================
+   database_visualization.css  –  Styles for the DB schema panel
+   ============================================================ */
+
+/* ── Outer wrapper ── */
+.dbviz-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+/* ── Individual table card ── */
+.dbviz-table {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  min-width: 140px;
+  max-width: 200px;
+  font-size: 0.78rem;
+  overflow: hidden;
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+}
+
+.dbviz-table:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Colour highlights per query type ── */
+.dbviz-table.hl-select {
+  border-color: #2196F3;
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.35);
+}
+.dbviz-table.hl-insert {
+  border-color: #4CAF50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.35);
+}
+.dbviz-table.hl-update {
+  border-color: #FF9800;
+  box-shadow: 0 0 20px rgba(255, 152, 0, 0.35);
+}
+.dbviz-table.hl-delete {
+  border-color: #F44336;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.35);
+}
+.dbviz-table.hl-create {
+  border-color: #9C27B0;
+  box-shadow: 0 0 20px rgba(156, 39, 176, 0.35);
+  animation: scalePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.dbviz-table.hl-alter {
+  border-color: #9C27B0;
+  box-shadow: 0 0 20px rgba(156, 39, 176, 0.25);
+}
+
+/* ── Table header ── */
+.dbviz-table-head {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.45rem 0.65rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dbviz-table-icon {
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ── Column list ── */
+.dbviz-col-list {
+  padding: 0.3rem 0;
+}
+
+.dbviz-col-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #aaa);
+  transition: background 0.15s;
+}
+
+.dbviz-col-row:last-child {
+  border-bottom: none;
+}
+
+.dbviz-col-row.hl-col {
+  background: rgba(255, 235, 59, 0.15);
+  color: #facc15;
+}
+
+.dbviz-col-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.75rem;
+}
+
+.dbviz-col-type {
+  font-size: 0.65rem;
+  color: var(--text-muted, #666);
+  white-space: nowrap;
+}
+
+.dbviz-col-badge {
+  font-size: 0.6rem;
+  padding: 0.05rem 0.28rem;
+  border-radius: 3px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.dbviz-col-badge.pk {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+
+.dbviz-col-badge.fk {
+  background: rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+}
+
+.dbviz-col-badge.idx {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+/* ── Row count footer ── */
+.dbviz-row-count {
+  font-size: 0.68rem;
+  color: var(--text-muted, #666);
+  padding: 0.28rem 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: right;
+}
+
+/* ── Empty state ── */
+.dbviz-empty {
+  color: var(--text-muted, #666);
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  font-style: italic;
+}
+
+/* ── Animated new-row indicator (INSERT) ── */
+.dbviz-new-row-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: #4CAF50;
+  padding: 0.2rem 0.65rem;
+  background: rgba(76, 175, 80, 0.1);
+  animation: bounceIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ── Deleted row indicator ── */
+.dbviz-deleted-row-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: #F44336;
+  padding: 0.2rem 0.65rem;
+  background: rgba(244, 67, 54, 0.1);
+  animation: rowDeleteFade 1.5s ease forwards;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .dbviz-table {
+    min-width: 110px;
+    max-width: 150px;
+    font-size: 0.72rem;
+  }
+}

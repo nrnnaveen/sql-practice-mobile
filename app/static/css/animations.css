@@ -1,0 +1,101 @@
+/* ============================================================
+   animations.css  –  Keyframe animations used by the visualizer
+   ============================================================ */
+
+/* ── Generic fade-in / fade-out ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Scale pop (used for CREATE TABLE) ── */
+@keyframes scalePop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ── Slide in from top (INSERT row) ── */
+@keyframes slideInTop {
+  from { transform: translateY(-40px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+/* ── Bounce in (INSERT row landing) ── */
+@keyframes bounceIn {
+  0%   { transform: translateY(-40px) scaleY(0.8); opacity: 0; }
+  60%  { transform: translateY(5px)   scaleY(1.05); }
+  80%  { transform: translateY(-3px)  scaleY(0.98); }
+  100% { transform: translateY(0)     scaleY(1);    opacity: 1; }
+}
+
+/* ── Slide away to right (DELETE row leaving) ── */
+@keyframes slideOutRight {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(120%); opacity: 0; }
+}
+
+/* ── Glow pulse (SELECT highlight) ── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px  currentColor; }
+  50%       { box-shadow: 0 0 24px currentColor; }
+}
+
+/* ── Cell flash (UPDATE) ── */
+@keyframes cellFlash {
+  0%, 100% { background: transparent; }
+  25%       { background: rgba(255, 152, 0, 0.35); }
+  75%       { background: rgba(255, 152, 0, 0.15); }
+}
+
+/* ── Row delete fade ── */
+@keyframes rowDeleteFade {
+  0%   { background: transparent;          opacity: 1; }
+  30%  { background: rgba(244,67,54,0.25); opacity: 0.9; }
+  100% { background: rgba(244,67,54,0.25); opacity: 0; }
+}
+
+/* ── Stagger slide from left (CREATE columns) ── */
+@keyframes slideInLeft {
+  from { transform: translateX(-30px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Utility animation classes ── */
+.anim-fade-in  { animation: fadeIn  0.4s ease forwards; }
+.anim-fade-out { animation: fadeOut 0.4s ease forwards; }
+.anim-scale-pop { animation: scalePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.anim-slide-in-top { animation: slideInTop 0.5s ease forwards; }
+.anim-bounce-in    { animation: bounceIn   0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.anim-slide-out-right { animation: slideOutRight 0.6s ease-in forwards; }
+.anim-glow-pulse   { animation: glowPulse 1s ease infinite; }
+.anim-cell-flash   { animation: cellFlash 0.6s ease forwards; }
+.anim-row-delete   { animation: rowDeleteFade 1.5s ease forwards; }
+.anim-slide-in-left { animation: slideInLeft 0.4s ease forwards; }
+
+/* ── Stagger delays for column slide ── */
+.anim-stagger-1 { animation-delay: 0.1s; }
+.anim-stagger-2 { animation-delay: 0.25s; }
+.anim-stagger-3 { animation-delay: 0.4s; }
+.anim-stagger-4 { animation-delay: 0.55s; }
+.anim-stagger-5 { animation-delay: 0.7s; }
+
+/* ── New row highlight (INSERT) ── */
+.new-row-highlight {
+  animation: bounceIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             cellFlash 0.6s ease 0.8s forwards;
+}
+
+/* ── Reduce motion preference ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
