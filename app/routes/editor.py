@@ -17,6 +17,7 @@ from flask import (
 
 from app.services.mysql_service import run_mysql
 from app.services.postgres_service import run_postgres
+from app.services.db_admin_service import get_user_db_info
 from app.utils.db_init import DB_PATH
 from app.utils.validators import validate_query
 from app.utils.decorators import rate_limit
@@ -80,6 +81,65 @@ def _get_user_settings(user_id):
     return {"theme": "dark", "default_database": "mysql", "results_per_page": DEFAULT_RESULTS_PER_PAGE}
 
 
+def _run_sandbox_query(db_info: dict, query: str) -> dict:
+    """Execute *query* against the user's personal sandbox database.
+
+    Supports MySQL and PostgreSQL.  No SQL restrictions apply – the user has
+    full privileges on their own database.
+    """
+    db_type = db_info.get("db_type", "mysql")
+    try:
+        if db_type == "mysql":
+            import mysql.connector  # type: ignore
+            conn = mysql.connector.connect(
+                host=db_info["db_host"],
+                port=db_info["db_port"],
+                user=db_info["db_user"],
+                password=db_info["db_password"],
+                database=db_info["db_name"],
+                connection_timeout=10,
+            )
+            cursor = conn.cursor()
+            cursor.execute(query)
+            if cursor.description:
+                columns = [col[0] for col in cursor.description]
+                rows = cursor.fetchall()
+                result = {"columns": columns, "rows": rows}
+            else:
+                conn.commit()
+                affected = cursor.rowcount
+                result = {"message": f"Query executed successfully. Rows affected: {affected}"}
+            cursor.close()
+            conn.close()
+            return result
+        else:  # postgres
+            import psycopg2  # type: ignore
+            conn = psycopg2.connect(
+                host=db_info["db_host"],
+                port=db_info["db_port"],
+                user=db_info["db_user"],
+                password=db_info["db_password"],
+                database=db_info["db_name"],
+                connect_timeout=10,
+            )
+            cursor = conn.cursor()
+            cursor.execute(query)
+            if cursor.description:
+                columns = [desc[0] for desc in cursor.description]
+                rows = cursor.fetchall()
+                result = {"columns": columns, "rows": rows}
+            else:
+                conn.commit()
+                affected = cursor.rowcount
+                result = {"message": f"Query executed successfully. Rows affected: {affected}"}
+            cursor.close()
+            conn.close()
+            return result
+    except Exception as exc:
+        logger.error("Sandbox query error (%s): %s", db_type, exc)
+        return {"error": str(exc)}
+
+
 @editor_bp.route("/editor", methods=["GET", "POST"])
 @rate_limit
 def editor():
@@ -95,29 +155,48 @@ def editor():
     total_rows = 0
     has_more = False
 
+    # Check if this user has their own sandbox database
+    sandbox_db = get_user_db_info(user_id)
+    if sandbox_db:
+        selected_db = sandbox_db["db_type"]
+
     if request.method == "POST":
-        selected_db = request.form.get("database", selected_db)
         query = request.form.get("query", "").strip()
         last_query = query
         page = int(request.form.get("page", 1))
         per_page = int(settings.get("results_per_page", DEFAULT_RESULTS_PER_PAGE))
 
-        if query:
-            # Validate query for safety
-            is_valid, validation_error = validate_query(query)
-            if not is_valid:
-                result = {"error": validation_error}
-                _save_history(user_id, query, selected_db, success=False, error_message=validation_error)
-            else:
-                start_time = time.time()
-                if selected_db == "mysql":
-                    raw_result = run_mysql(query)
-                elif selected_db == "postgres":
-                    raw_result = run_postgres(query)
-                else:
-                    raw_result = {"error": "Unknown database type."}
-                elapsed = round(time.time() - start_time, 3)
+        if not sandbox_db:
+            selected_db = request.form.get("database", selected_db)
 
+        if query:
+            if sandbox_db:
+                # Sandbox mode: the user has their own isolated database, so all SQL
+                # commands (INSERT, UPDATE, DELETE, DROP, CREATE, …) are allowed.
+                # There is no shared data at risk – queries run only against the user's
+                # personal sandbox that was provisioned exclusively for them.
+                start_time = time.time()
+                raw_result = _run_sandbox_query(sandbox_db, query)
+                elapsed = round(time.time() - start_time, 3)
+            else:
+                # Shared mode: enforce read-only restrictions
+                is_valid, validation_error = validate_query(query)
+                if not is_valid:
+                    result = {"error": validation_error}
+                    _save_history(user_id, query, selected_db, success=False, error_message=validation_error)
+                    raw_result = None
+                    elapsed = 0.0
+                else:
+                    start_time = time.time()
+                    if selected_db == "mysql":
+                        raw_result = run_mysql(query)
+                    elif selected_db == "postgres":
+                        raw_result = run_postgres(query)
+                    else:
+                        raw_result = {"error": "Unknown database type."}
+                    elapsed = round(time.time() - start_time, 3)
+
+            if raw_result is not None:
                 error_msg = raw_result.get("error") if raw_result else None
                 _save_history(
                     user_id, query, selected_db,
@@ -147,6 +226,7 @@ def editor():
         history=history,
         last_query=last_query,
         selected_db=selected_db,
+        sandbox_db=sandbox_db,
         theme=settings.get("theme", "dark"),
         page=page,
         total_rows=total_rows,
@@ -162,6 +242,7 @@ def export_results():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
+    user_id = session["user_id"]
     export_format = request.form.get("format", "csv").lower()
     query = request.form.get("query", "").strip()
     selected_db = request.form.get("database", "mysql")
@@ -169,16 +250,20 @@ def export_results():
     if not query:
         return jsonify({"error": "No query provided."}), 400
 
-    is_valid, validation_error = validate_query(query)
-    if not is_valid:
-        return jsonify({"error": validation_error}), 400
-
-    if selected_db == "mysql":
-        raw_result = run_mysql(query)
-    elif selected_db == "postgres":
-        raw_result = run_postgres(query)
+    sandbox_db = get_user_db_info(user_id)
+    if sandbox_db:
+        raw_result = _run_sandbox_query(sandbox_db, query)
     else:
-        return jsonify({"error": "Unknown database type."}), 400
+        is_valid, validation_error = validate_query(query)
+        if not is_valid:
+            return jsonify({"error": validation_error}), 400
+
+        if selected_db == "mysql":
+            raw_result = run_mysql(query)
+        elif selected_db == "postgres":
+            raw_result = run_postgres(query)
+        else:
+            return jsonify({"error": "Unknown database type."}), 400
 
     if raw_result.get("error"):
         return jsonify({"error": raw_result["error"]}), 400
