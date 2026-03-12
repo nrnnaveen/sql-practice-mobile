@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Q{{ question_num }}/{{ total_questions }} – {{ diff_info.label }} {{ db_type | upper }} Practice</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/practice_mode.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/database_visualization.css') }}">
 <style>
   /* ── Practice Layout ── */
   .practice-layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-top:1rem;}
@@ -157,6 +160,20 @@
         <div class="hint-box" id="hintBox">{{ question.hint }}</div>
       </div>
 
+      <!-- Database Visualization -->
+      <div class="viz-section">
+        <div class="viz-section-label">&#x1F4CA; Database Visualization</div>
+        <div class="db-viz-container dbviz-wrapper" id="vizContainer">
+          <!-- Tables are rendered by visualizer_engine.js -->
+          <span class="dbviz-empty">Loading schema…</span>
+        </div>
+        <!-- Animation status bar -->
+        <div class="anim-status-bar" id="animStatusBar">
+          <div class="anim-status-dot" id="animStatusDot"></div>
+          <span class="anim-status-text" id="animStatusText">Running…</span>
+        </div>
+      </div>
+
       <!-- SQL Editor -->
       <div class="editor-card">
         <div class="question-label" style="margin-bottom:0.5rem;">&#x270A; Your SQL Answer</div>
@@ -215,15 +232,26 @@
 
 <!-- MONACO EDITOR -->
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
-<script>
-(function () {
-  'use strict';
 
+<!-- Practice mode global state (must come before modules) -->
+<script>
   var DB_TYPE    = {{ db_type | tojson }};
   var DIFFICULTY = {{ difficulty | tojson }};
   var Q_ID       = {{ question_num }};
   var TOTAL_Q    = {{ total_questions }};
   var IS_COMPLETED = {{ is_completed | tojson }};
+</script>
+
+<!-- Visualizer / animation modules -->
+<script src="{{ url_for('static', filename='js/query_parser.js') }}"></script>
+<script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/visualizer_engine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/progress_tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/practice_mode.js') }}"></script>
+
+<script>
+(function () {
+  'use strict';
 
   // ── Monaco Editor setup ──────────────────────────────────────────────────
   var monacoEditor;
@@ -271,125 +299,15 @@
     box.classList.toggle('show');
   };
 
-  // ── Run query ────────────────────────────────────────────────────────────
+  // ── Run query – delegates to practice_mode.js ────────────────────────────
   window.runQuery = function () {
     var query = getQuery();
     if (!query) return;
-
-    var runBtn = document.getElementById('runBtn');
-    var spinner = document.getElementById('runSpinner');
-    runBtn.disabled = true;
-    if (spinner) spinner.classList.remove('hidden');
-
-    fetch('/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + Q_ID + '/run', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query }),
-    })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      runBtn.disabled = false;
-      if (spinner) spinner.classList.add('hidden');
-      renderResult(data);
-    })
-    .catch(function (err) {
-      runBtn.disabled = false;
-      if (spinner) spinner.classList.add('hidden');
-      renderResult({ error: 'Network error: ' + err.message });
-    });
+    if (typeof window.practiceRunQuery === 'function') {
+      window.practiceRunQuery(query);
+    }
   };
 
-  function renderResult(data) {
-    var area = document.getElementById('resultArea');
-    var html = '';
-
-    if (data.error) {
-      html = '<div class="result-card"><p class="error-msg">&#10006; ' + escHtml(data.error) + '</p></div>';
-      area.innerHTML = html;
-      return;
-    }
-
-    var meta = '';
-    if (data.execution_time !== undefined) {
-      meta = '<div class="result-meta">Execution time: ' + data.execution_time.toFixed(3) + 's</div>';
-    }
-
-    if (data.columns && data.rows) {
-      var tableHtml = '<div class="table-scroll"><table><thead><tr>';
-      data.columns.forEach(function (c) { tableHtml += '<th>' + escHtml(String(c)) + '</th>'; });
-      tableHtml += '</tr></thead><tbody>';
-      data.rows.forEach(function (row) {
-        tableHtml += '<tr>';
-        row.forEach(function (cell) { tableHtml += '<td>' + escHtml(String(cell == null ? '' : cell)) + '</td>'; });
-        tableHtml += '</tr>';
-      });
-      tableHtml += '</tbody></table></div>';
-      html = '<div class="result-card">' + meta +
-             '<p class="result-meta">' + data.rows.length + ' row(s) returned</p>' +
-             tableHtml + '</div>';
-    } else if (data.message) {
-      html = '<div class="result-card">' + meta + '<p class="success-msg">&#10003; ' + escHtml(data.message) + '</p></div>';
-    }
-
-    area.innerHTML = html;
-
-    // Show congratulations
-    if (data.congratulations) {
-      var card = document.getElementById('congratsCard');
-      card.style.display = 'block';
-      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-      // Show sample answer button
-      var sampleBtn = document.querySelector('.sample-btn');
-      if (!sampleBtn) {
-        var runBar = document.querySelector('.run-bar');
-        sampleBtn = document.createElement('button');
-        sampleBtn.className = 'sample-btn';
-        sampleBtn.textContent = '📖 Sample Answer';
-        sampleBtn.onclick = window.toggleSampleAnswer;
-        runBar.appendChild(sampleBtn);
-      }
-
-      // Build next button
-      var wrap = document.getElementById('nextBtnWrap');
-      if (data.all_complete) {
-        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/complete" class="btn-next">&#x1F3C6; View Certificate!</a>';
-      } else {
-        var nextQ = data.next_question || (Q_ID + 1);
-        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + nextQ + '" class="btn-next">Next Question &#x2192;</a>';
-      }
-
-      // Update progress bar
-      if (data.completed_ids) {
-        var pct = Math.round((data.completed_ids.length / TOTAL_Q) * 100);
-        document.getElementById('progressFill').style.width = pct + '%';
-      }
-    }
-
-    // Update history list
-    if (data.history) {
-      renderHistory(data.history);
-    }
-  }
-
-  function renderHistory(items) {
-    var list = document.getElementById('historyList');
-    var html = '';
-    items.forEach(function (item) {
-      html += '<div class="history-item" onclick="loadHistoryQuery(' + JSON.stringify(item.query) + ')">';
-      html += '<span class="history-query">' + escHtml(item.query) + '</span>';
-      html += '<span style="font-size:.75rem;color:' + (item.success ? '#4ade80' : '#f87171') + ';">';
-      html += (item.success ? '✓ ' : '✗ ');
-      if (item.execution_time != null) html += item.execution_time.toFixed(3) + 's';
-      html += '</span></div>';
-    });
-    list.innerHTML = html || '<p class="history-empty">No history yet.</p>';
-  }
-
-  function escHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-  }
 }());
 </script>
 </body>
