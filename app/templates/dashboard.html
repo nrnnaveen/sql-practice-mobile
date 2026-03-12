@@ -12,6 +12,8 @@
         .db-info-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border,#333);}
         .db-info-table td:first-child{font-weight:600;color:var(--text-muted,#aaa);width:40%;}
         .db-badge{display:inline-block;background:var(--accent,#7c3aed);color:#fff;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.8rem;text-transform:uppercase;}
+        .db-badge.mysql{background:#f59e0b;}
+        .db-badge.postgres{background:#3b82f6;}
         .create-form-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
         .create-form-card h3{margin:0 0 0.5rem;color:var(--accent,#7c3aed);}
         .create-form-card p{color:var(--text-muted,#aaa);margin:0 0 1.5rem;font-size:0.9rem;}
@@ -32,6 +34,16 @@
         .cred-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem;background:rgba(255,255,255,0.05);border-radius:6px;margin:0.4rem 0;font-family:monospace;font-size:0.85rem;}
         .copy-btn{background:var(--accent,#7c3aed);color:#fff;border:none;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;}
         .info-banner{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.9rem;color:var(--text-muted,#ccc);}
+        .db-section{border-left:3px solid var(--border,#444);padding-left:1rem;margin:1.5rem 0;}
+        .db-section-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;}
+        .db-section-header h4{margin:0;font-size:1rem;}
+        .practice-btn{display:block;width:100%;padding:0.75rem;text-align:center;background:var(--accent,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;text-decoration:none;margin-top:0.75rem;}
+        .practice-btn.mysql-btn{background:#f59e0b;}
+        .practice-btn.mysql-btn:hover{background:#d97706;}
+        .practice-btn.postgres-btn{background:#3b82f6;}
+        .practice-btn.postgres-btn:hover{background:#2563eb;}
+        .dual-db-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+        @media(max-width:600px){.dual-db-grid{grid-template-columns:1fr;}}
     </style>
 </head>
 <body class="dashboard-bg">
@@ -69,86 +81,127 @@
             <div class="dash-welcome">Welcome {{ display_name }} &#x1F44B;</div>
             <div class="dash-subtitle">SQL Playground – Your Personal Sandbox</div>
 
-            {% if db_info %}
-            <!-- ── MODE 1: User has a sandbox database ── -->
-            <div class="db-info-card">
-                <h3>&#x1F5C4; Your Sandbox Database</h3>
-                <table class="db-info-table">
-                    <tr>
-                        <td>Type</td>
-                        <td><span class="db-badge">{{ db_info.db_type }}</span></td>
-                    </tr>
-                    <tr>
-                        <td>Database</td>
-                        <td><code>{{ db_info.db_name }}</code></td>
-                    </tr>
-                    <tr>
-                        <td>Username</td>
-                        <td><code>{{ db_info.db_user }}</code></td>
-                    </tr>
-                    <tr>
-                        <td>Host</td>
-                        <td><code>{{ db_info.db_host }}</code></td>
-                    </tr>
-                    <tr>
-                        <td>Port</td>
-                        <td><code>{{ db_info.db_port }}</code></td>
-                    </tr>
-                </table>
-            </div>
             <div class="info-banner">
-                &#x2705; You have <strong>full SQL access</strong> to your personal database —
-                INSERT, UPDATE, DELETE, CREATE TABLE, and more are all supported.
-                Sample data (employees, products, orders) has been pre-loaded.
-            </div>
-            <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn">
-                &#x25B6; Open SQL Editor
-            </a>
-
-            {% else %}
-            <!-- ── MODE 2: No database yet – show creation form ── -->
-            <div class="info-banner">
-                &#x2728; Create your own isolated SQL sandbox database to practice
-                <strong>any SQL command</strong> — SELECT, INSERT, UPDATE, DELETE, CREATE, DROP and more.
-                You get one database per account, pre-loaded with sample data.
+                &#x2728; Practice <strong>any SQL command</strong> — SELECT, INSERT, UPDATE, DELETE, CREATE, DROP and more —
+                on your personal isolated databases. Create one MySQL and one PostgreSQL database, each pre-loaded with sample data.
             </div>
 
-            <div class="create-form-card">
-                <h3>&#x1F527; Set Up Your Sandbox Database</h3>
-                <p>Choose a username and password for your personal database account.</p>
+            <!-- ── Dual Database Grid ── -->
+            <div class="dual-db-grid">
 
-                <div class="form-row">
-                    <label for="db-type">Database Type</label>
-                    <select id="db-type">
-                        <option value="mysql">MySQL</option>
-                        <option value="postgres">PostgreSQL</option>
-                    </select>
+                <!-- ── MySQL Section ── -->
+                <div>
+                {% if mysql_db %}
+                    <!-- MySQL database exists: show info + Practice button -->
+                    <div class="db-info-card">
+                        <div class="db-section-header">
+                            <span class="db-badge mysql">MySQL</span>
+                            <h4>&#x2705; Ready to Practice</h4>
+                        </div>
+                        <table class="db-info-table">
+                            <tr><td>Database</td><td><code>{{ mysql_db.db_name }}</code></td></tr>
+                            <tr><td>Username</td><td><code>{{ mysql_db.db_user }}</code></td></tr>
+                            <tr><td>Host</td><td><code>{{ mysql_db.db_host }}</code></td></tr>
+                            <tr><td>Port</td><td><code>{{ mysql_db.db_port }}</code></td></tr>
+                        </table>
+                        <a href="{{ url_for('editor.editor_mysql') }}" class="practice-btn mysql-btn">
+                            &#x25B6; Practice MySQL
+                        </a>
+                    </div>
+                {% else %}
+                    <!-- No MySQL DB: show create form -->
+                    <div class="create-form-card" id="mysql-create-card">
+                        <div class="db-section-header">
+                            <span class="db-badge mysql">MySQL</span>
+                            <h4>Create Database</h4>
+                        </div>
+                        <p>Set up your personal MySQL sandbox. Pre-loaded with sample data (employees, products, orders).</p>
+
+                        <div class="form-row">
+                            <label for="mysql-username">Database Username</label>
+                            <input type="text" id="mysql-username" placeholder="e.g. john_mysql" autocomplete="off"
+                                   minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
+                            <div class="username-feedback" id="mysql-username-feedback"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="mysql-password">Database Password</label>
+                            <input type="password" id="mysql-password" placeholder="Min 8 characters" autocomplete="new-password">
+                            <div class="password-strength" id="mysql-pw-strength-text"></div>
+                            <div class="strength-bar" id="mysql-pw-strength-bar" style="width:0;background:#f87171"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="mysql-password-confirm">Confirm Password</label>
+                            <input type="password" id="mysql-password-confirm" placeholder="Repeat password" autocomplete="new-password">
+                            <div class="username-feedback" id="mysql-pw-confirm-feedback"></div>
+                        </div>
+
+                        <button class="btn-create" id="mysql-btn-create" data-db-type="mysql" disabled>
+                            &#x1F527; Create MySQL Database
+                        </button>
+                        <div id="mysql-create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
+                    </div>
+                {% endif %}
                 </div>
 
-                <div class="form-row">
-                    <label for="db-username">Database Username</label>
-                    <input type="text" id="db-username" placeholder="e.g. john_doe" autocomplete="off"
-                           minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
-                    <div class="username-feedback" id="username-feedback"></div>
+                <!-- ── PostgreSQL Section ── -->
+                <div>
+                {% if postgres_db %}
+                    <!-- PostgreSQL database exists: show info + Practice button -->
+                    <div class="db-info-card">
+                        <div class="db-section-header">
+                            <span class="db-badge postgres">PostgreSQL</span>
+                            <h4>&#x2705; Ready to Practice</h4>
+                        </div>
+                        <table class="db-info-table">
+                            <tr><td>Database</td><td><code>{{ postgres_db.db_name }}</code></td></tr>
+                            <tr><td>Username</td><td><code>{{ postgres_db.db_user }}</code></td></tr>
+                            <tr><td>Host</td><td><code>{{ postgres_db.db_host }}</code></td></tr>
+                            <tr><td>Port</td><td><code>{{ postgres_db.db_port }}</code></td></tr>
+                        </table>
+                        <a href="{{ url_for('editor.editor_postgresql') }}" class="practice-btn postgres-btn">
+                            &#x25B6; Practice PostgreSQL
+                        </a>
+                    </div>
+                {% else %}
+                    <!-- No PostgreSQL DB: show create form -->
+                    <div class="create-form-card" id="postgres-create-card">
+                        <div class="db-section-header">
+                            <span class="db-badge postgres">PostgreSQL</span>
+                            <h4>Create Database</h4>
+                        </div>
+                        <p>Set up your personal PostgreSQL sandbox. Pre-loaded with sample data (employees, products, orders).</p>
+
+                        <div class="form-row">
+                            <label for="pg-username">Database Username</label>
+                            <input type="text" id="pg-username" placeholder="e.g. john_pg" autocomplete="off"
+                                   minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
+                            <div class="username-feedback" id="pg-username-feedback"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="pg-password">Database Password</label>
+                            <input type="password" id="pg-password" placeholder="Min 8 characters" autocomplete="new-password">
+                            <div class="password-strength" id="pg-pw-strength-text"></div>
+                            <div class="strength-bar" id="pg-pw-strength-bar" style="width:0;background:#f87171"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="pg-password-confirm">Confirm Password</label>
+                            <input type="password" id="pg-password-confirm" placeholder="Repeat password" autocomplete="new-password">
+                            <div class="username-feedback" id="pg-pw-confirm-feedback"></div>
+                        </div>
+
+                        <button class="btn-create" id="pg-btn-create" data-db-type="postgres" disabled>
+                            &#x1F527; Create PostgreSQL Database
+                        </button>
+                        <div id="pg-create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
+                    </div>
+                {% endif %}
                 </div>
 
-                <div class="form-row">
-                    <label for="db-password">Database Password</label>
-                    <input type="password" id="db-password" placeholder="Min 8 characters" autocomplete="new-password">
-                    <div class="password-strength" id="pw-strength-text"></div>
-                    <div class="strength-bar" id="pw-strength-bar" style="width:0;background:#f87171"></div>
-                </div>
-
-                <div class="form-row">
-                    <label for="db-password-confirm">Confirm Password</label>
-                    <input type="password" id="db-password-confirm" placeholder="Repeat password" autocomplete="new-password">
-                    <div class="username-feedback" id="pw-confirm-feedback"></div>
-                </div>
-
-                <button class="btn-create" id="btn-create" disabled>Create My Database</button>
-                <div id="create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
-            </div>
-            {% endif %}
+            </div><!-- /dual-db-grid -->
 
         </div>
     </main>
@@ -162,170 +215,205 @@
             <div class="info-banner" style="margin-top:1rem;">
                 &#x1F512; Save these credentials — the password will not be shown again in plaintext.
             </div>
-            <a href="{{ url_for('editor.editor') }}" class="dash-editor-btn" style="display:block;text-align:center;margin-top:1rem;">
-                &#x25B6; Open SQL Editor
-            </a>
+            <a href="#" id="modal-practice-btn" class="practice-btn" style="display:block;text-align:center;margin-top:1rem;"></a>
         </div>
     </div>
 
     <script src="{{ url_for('static', filename='dashboard.js') }}" data-username="{{ display_name | e }}"></script>
     <script>
     (function () {
-        var usernameInput = document.getElementById('db-username');
-        var passwordInput = document.getElementById('db-password');
-        var confirmInput  = document.getElementById('db-password-confirm');
-        var dbTypeSelect  = document.getElementById('db-type');
-        var createBtn     = document.getElementById('btn-create');
-        var uFeedback     = document.getElementById('username-feedback');
-        var pwStrText     = document.getElementById('pw-strength-text');
-        var pwStrBar      = document.getElementById('pw-strength-bar');
-        var pwConfirm     = document.getElementById('pw-confirm-feedback');
-        var createError   = document.getElementById('create-error');
+        'use strict';
 
-        if (!usernameInput) return;  // mode 1 – no form present
+        // ── Shared form-wiring helper ──────────────────────────────────────
+        function wireForm(opts) {
+            // opts: { dbType, usernameInputId, passwordInputId, confirmInputId,
+            //         uFeedbackId, pwStrTextId, pwStrBarId, pwConfirmId,
+            //         createBtnId, createErrorId, practiceUrl }
+            var usernameInput = document.getElementById(opts.usernameInputId);
+            var passwordInput = document.getElementById(opts.passwordInputId);
+            var confirmInput  = document.getElementById(opts.confirmInputId);
+            var createBtn     = document.getElementById(opts.createBtnId);
+            var uFeedback     = document.getElementById(opts.uFeedbackId);
+            var pwStrText     = document.getElementById(opts.pwStrTextId);
+            var pwStrBar      = document.getElementById(opts.pwStrBarId);
+            var pwConfirm     = document.getElementById(opts.pwConfirmId);
+            var createError   = document.getElementById(opts.createErrorId);
 
-        var usernameOk = false;
-        var passwordOk = false;
-        var confirmOk  = false;
-        var checkTimeout;
+            if (!usernameInput) return;  // section not present (DB already created)
 
-        function updateBtn() {
-            createBtn.disabled = !(usernameOk && passwordOk && confirmOk);
+            var usernameOk = false;
+            var passwordOk = false;
+            var confirmOk  = false;
+            var checkTimeout;
+
+            function updateBtn() {
+                createBtn.disabled = !(usernameOk && passwordOk && confirmOk);
+            }
+
+            // Live username availability check (debounced 500 ms)
+            usernameInput.addEventListener('input', function () {
+                var val = this.value.trim();
+                uFeedback.className = 'username-feedback';
+                uFeedback.textContent = '';
+                usernameOk = false;
+                updateBtn();
+                clearTimeout(checkTimeout);
+                if (val.length < 3) return;
+                uFeedback.textContent = 'Checking…';
+                checkTimeout = setTimeout(function () {
+                    fetch('/api/check-username?username=' + encodeURIComponent(val) + '&db_type=' + opts.dbType)
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.available) {
+                                uFeedback.textContent = '✓ Username available';
+                                uFeedback.className = 'username-feedback ok';
+                                usernameOk = true;
+                            } else {
+                                uFeedback.textContent = '✗ Username taken or invalid';
+                                uFeedback.className = 'username-feedback err';
+                                usernameOk = false;
+                            }
+                            updateBtn();
+                        })
+                        .catch(function () { uFeedback.textContent = ''; });
+                }, 500);
+            });
+
+            // Password strength meter
+            passwordInput.addEventListener('input', function () {
+                var pw = this.value;
+                var strength = 0;
+                if (pw.length >= 8)       strength++;
+                if (/[A-Z]/.test(pw))     strength++;
+                if (/[0-9]/.test(pw))     strength++;
+                if (/[^A-Za-z0-9]/.test(pw)) strength++;
+                var labels = ['Too short','Weak','Fair','Good','Strong'];
+                var colors = ['#f87171','#f87171','#fb923c','#facc15','#4ade80'];
+                pwStrText.textContent = pw.length ? labels[strength] : '';
+                pwStrBar.style.width  = (strength * 25) + '%';
+                pwStrBar.style.background = colors[strength];
+                passwordOk = pw.length >= 8;
+                updateBtn();
+                if (confirmInput.value) confirmInput.dispatchEvent(new Event('input'));
+            });
+
+            confirmInput.addEventListener('input', function () {
+                if (this.value === passwordInput.value) {
+                    pwConfirm.textContent = '✓ Passwords match';
+                    pwConfirm.className = 'username-feedback ok';
+                    confirmOk = true;
+                } else {
+                    pwConfirm.textContent = '✗ Passwords do not match';
+                    pwConfirm.className = 'username-feedback err';
+                    confirmOk = false;
+                }
+                updateBtn();
+            });
+
+            createBtn.addEventListener('click', function () {
+                createBtn.disabled = true;
+                createBtn.textContent = 'Creating…';
+                createError.textContent = '';
+
+                fetch('/api/create-database', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        db_type:  opts.dbType,
+                        username: usernameInput.value.trim(),
+                        password: passwordInput.value,
+                    })
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        var info = d.db_info;
+                        var pairs = [
+                            ['Type',     info.db_type],
+                            ['Database', info.db_name],
+                            ['Username', info.db_user],
+                            ['Host',     info.db_host],
+                            ['Port',     String(info.db_port)],
+                            ['Password', passwordInput.value],
+                        ];
+                        var container = document.getElementById('modal-creds');
+                        container.innerHTML = '';
+                        pairs.forEach(function (p) {
+                            var row   = document.createElement('div');
+                            row.className = 'cred-row';
+                            var label = document.createElement('span');
+                            label.textContent = p[0];
+                            var value = document.createElement('span');
+                            value.textContent = p[1];
+                            var btn = document.createElement('button');
+                            btn.className = 'copy-btn';
+                            btn.textContent = 'Copy';
+                            (function (v) {
+                                btn.addEventListener('click', function () {
+                                    navigator.clipboard.writeText(v);
+                                });
+                            })(p[1]);
+                            row.appendChild(label);
+                            row.appendChild(value);
+                            row.appendChild(btn);
+                            container.appendChild(row);
+                        });
+                        // Set the practice button URL based on DB type
+                        var pracBtn = document.getElementById('modal-practice-btn');
+                        if (opts.dbType === 'mysql') {
+                            pracBtn.href = '/editor/mysql';
+                            pracBtn.textContent = '▶ Practice MySQL';
+                            pracBtn.className = 'practice-btn mysql-btn';
+                        } else {
+                            pracBtn.href = '/editor/postgresql';
+                            pracBtn.textContent = '▶ Practice PostgreSQL';
+                            pracBtn.className = 'practice-btn postgres-btn';
+                        }
+                        document.getElementById('successModal').classList.add('show');
+                    } else {
+                        createError.textContent = d.error || 'Failed to create database.';
+                        createBtn.disabled = false;
+                        createBtn.textContent = opts.dbType === 'mysql'
+                            ? '🔧 Create MySQL Database'
+                            : '🔧 Create PostgreSQL Database';
+                    }
+                })
+                .catch(function () {
+                    createError.textContent = 'Network error. Please try again.';
+                    createBtn.disabled = false;
+                    createBtn.textContent = opts.dbType === 'mysql'
+                        ? '🔧 Create MySQL Database'
+                        : '🔧 Create PostgreSQL Database';
+                });
+            });
         }
 
-        // Live username availability check (debounced)
-        usernameInput.addEventListener('input', function () {
-            var val = this.value.trim();
-            uFeedback.className = 'username-feedback';
-            uFeedback.textContent = '';
-            usernameOk = false;
-            updateBtn();
-            clearTimeout(checkTimeout);
-            if (val.length < 3) return;
-            uFeedback.textContent = 'Checking…';
-            checkTimeout = setTimeout(function () {
-                var db = dbTypeSelect ? dbTypeSelect.value : 'mysql';
-                fetch('/api/check-username?username=' + encodeURIComponent(val) + '&db_type=' + db)
-                    .then(function (r) { return r.json(); })
-                    .then(function (d) {
-                        if (d.available) {
-                            uFeedback.textContent = '✓ Username available';
-                            uFeedback.className = 'username-feedback ok';
-                            usernameOk = true;
-                        } else {
-                            uFeedback.textContent = '✗ Username taken or invalid';
-                            uFeedback.className = 'username-feedback err';
-                            usernameOk = false;
-                        }
-                        updateBtn();
-                    })
-                    .catch(function () { uFeedback.textContent = ''; });
-            }, 500);
+        // Wire MySQL form
+        wireForm({
+            dbType: 'mysql',
+            usernameInputId:  'mysql-username',
+            passwordInputId:  'mysql-password',
+            confirmInputId:   'mysql-password-confirm',
+            uFeedbackId:      'mysql-username-feedback',
+            pwStrTextId:      'mysql-pw-strength-text',
+            pwStrBarId:       'mysql-pw-strength-bar',
+            pwConfirmId:      'mysql-pw-confirm-feedback',
+            createBtnId:      'mysql-btn-create',
+            createErrorId:    'mysql-create-error',
         });
 
-        dbTypeSelect && dbTypeSelect.addEventListener('change', function () {
-            if (usernameInput.value.trim().length >= 3) {
-                usernameInput.dispatchEvent(new Event('input'));
-            }
-        });
-
-        // Password strength
-        passwordInput.addEventListener('input', function () {
-            var pw = this.value;
-            var strength = 0;
-            if (pw.length >= 8)  strength++;
-            if (/[A-Z]/.test(pw)) strength++;
-            if (/[0-9]/.test(pw)) strength++;
-            if (/[^A-Za-z0-9]/.test(pw)) strength++;
-            var labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
-            var colors = ['#f87171','#f87171','#fb923c','#facc15','#4ade80'];
-            pwStrText.textContent = pw.length ? labels[strength] : '';
-            pwStrBar.style.width  = (strength * 25) + '%';
-            pwStrBar.style.background = colors[strength];
-            passwordOk = pw.length >= 8;
-            updateBtn();
-            // re-check confirm
-            if (confirmInput.value) confirmInput.dispatchEvent(new Event('input'));
-        });
-
-        confirmInput.addEventListener('input', function () {
-            if (this.value === passwordInput.value) {
-                pwConfirm.textContent = '✓ Passwords match';
-                pwConfirm.className = 'username-feedback ok';
-                confirmOk = true;
-            } else {
-                pwConfirm.textContent = '✗ Passwords do not match';
-                pwConfirm.className = 'username-feedback err';
-                confirmOk = false;
-            }
-            updateBtn();
-        });
-
-        createBtn.addEventListener('click', function () {
-            createBtn.disabled = true;
-            createBtn.textContent = 'Creating…';
-            createError.textContent = '';
-
-            fetch('/api/create-database', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    db_type:  dbTypeSelect ? dbTypeSelect.value : 'mysql',
-                    username: usernameInput.value.trim(),
-                    password: passwordInput.value,
-                })
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (d.success) {
-                    var info = d.db_info;
-                    var pairs = [
-                        ['Type',     info.db_type],
-                        ['Database', info.db_name],
-                        ['Username', info.db_user],
-                        ['Host',     info.db_host],
-                        ['Port',     String(info.db_port)],
-                        ['Password', passwordInput.value],
-                    ];
-                    var container = document.getElementById('modal-creds');
-                    container.innerHTML = '';
-                    pairs.forEach(function (p) {
-                        var row = document.createElement('div');
-                        row.className = 'cred-row';
-
-                        var label = document.createElement('span');
-                        label.textContent = p[0];
-
-                        var value = document.createElement('span');
-                        value.textContent = p[1];
-
-                        var btn = document.createElement('button');
-                        btn.className = 'copy-btn';
-                        btn.textContent = 'Copy';
-                        // Use a closure to capture the correct value
-                        (function (v) {
-                            btn.addEventListener('click', function () {
-                                navigator.clipboard.writeText(v);
-                            });
-                        })(p[1]);
-
-                        row.appendChild(label);
-                        row.appendChild(value);
-                        row.appendChild(btn);
-                        container.appendChild(row);
-                    });
-                    document.getElementById('successModal').classList.add('show');
-                } else {
-                    createError.textContent = d.error || 'Failed to create database.';
-                    createBtn.disabled = false;
-                    createBtn.textContent = 'Create My Database';
-                }
-            })
-            .catch(function (e) {
-                createError.textContent = 'Network error. Please try again.';
-                createBtn.disabled = false;
-                createBtn.textContent = 'Create My Database';
-            });
+        // Wire PostgreSQL form
+        wireForm({
+            dbType: 'postgres',
+            usernameInputId:  'pg-username',
+            passwordInputId:  'pg-password',
+            confirmInputId:   'pg-password-confirm',
+            uFeedbackId:      'pg-username-feedback',
+            pwStrTextId:      'pg-pw-strength-text',
+            pwStrBarId:       'pg-pw-strength-bar',
+            pwConfirmId:      'pg-pw-confirm-feedback',
+            createBtnId:      'pg-btn-create',
+            createErrorId:    'pg-create-error',
         });
     })();
     </script>

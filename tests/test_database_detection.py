@@ -16,18 +16,19 @@ class TestDashboardSmartDetection:
     def test_dashboard_no_db_shows_create_form(self, client):
         """New user (no sandbox DB) should see the creation form."""
         _login(client, email="no_db@example.com")
+        empty_dbs = {"mysql": None, "postgres": None}
         with patch(
-            "app.routes.dashboard.get_user_db_info", return_value=None
+            "app.routes.dashboard.get_all_user_dbs", return_value=empty_dbs
         ):
             resp = client.get("/dashboard")
         assert resp.status_code == 200
         # Should show 'create' related content
         assert b"Create" in resp.data or b"create" in resp.data or b"sandbox" in resp.data.lower()
 
-    def test_dashboard_with_db_shows_info(self, client):
-        """User with sandbox DB should see their database info."""
+    def test_dashboard_with_mysql_db_shows_info(self, client):
+        """User with MySQL sandbox DB should see their database info."""
         _login(client, email="has_db@example.com")
-        fake_db = {
+        fake_mysql = {
             "db_type": "mysql",
             "db_name": "sandbox_testuser",
             "db_user": "testuser",
@@ -35,13 +36,38 @@ class TestDashboardSmartDetection:
             "db_port": 3306,
             "db_password": "secret123",
         }
+        dbs = {"mysql": fake_mysql, "postgres": None}
         with patch(
-            "app.routes.dashboard.get_user_db_info", return_value=fake_db
+            "app.routes.dashboard.get_all_user_dbs", return_value=dbs
         ):
             resp = client.get("/dashboard")
         assert resp.status_code == 200
         assert b"sandbox_testuser" in resp.data
         assert b"testuser" in resp.data
+
+    def test_dashboard_with_both_dbs_shows_both(self, client):
+        """User with both MySQL and PostgreSQL DBs should see both."""
+        _login(client, email="has_both_db@example.com")
+        fake_mysql = {
+            "db_type": "mysql", "db_name": "sandbox_mysqluser",
+            "db_user": "mysqluser", "db_host": "db.example.com",
+            "db_port": 3306, "db_password": "pw",
+        }
+        fake_pg = {
+            "db_type": "postgres", "db_name": "sandbox_pguser",
+            "db_user": "pguser", "db_host": "pg.example.com",
+            "db_port": 5432, "db_password": "pw",
+        }
+        dbs = {"mysql": fake_mysql, "postgres": fake_pg}
+        with patch(
+            "app.routes.dashboard.get_all_user_dbs", return_value=dbs
+        ):
+            resp = client.get("/dashboard")
+        assert resp.status_code == 200
+        assert b"sandbox_mysqluser" in resp.data
+        assert b"sandbox_pguser" in resp.data
+        assert b"Practice MySQL" in resp.data
+        assert b"Practice PostgreSQL" in resp.data
 
     def test_dashboard_requires_login(self, client):
         """Unauthenticated request should redirect to login."""
@@ -137,7 +163,7 @@ class TestCreateDatabaseEndpoint:
         assert data["db_info"]["db_name"] == "sandbox_newuser"
 
     def test_create_db_duplicate_rejected(self, client):
-        """If user already has a DB, creation should be rejected."""
+        """If user already has a DB of the same type, creation should be rejected."""
         _login(client, email="create_db3@example.com")
         existing = {
             "db_type": "mysql", "db_name": "sandbox_existing",
@@ -152,6 +178,34 @@ class TestCreateDatabaseEndpoint:
         assert resp.status_code == 409
         data = resp.get_json()
         assert not data["success"]
+
+    def test_create_db_different_type_allowed(self, client):
+        """User with MySQL DB should be able to create a PostgreSQL DB."""
+        _login(client, email="create_db5@example.com")
+        fake_info = {
+            "db_type": "postgres",
+            "db_name": "sandbox_pguser",
+            "db_user": "pguser",
+            "db_host": "localhost",
+            "db_port": 5432,
+        }
+        # Mock: user has MySQL DB already, but not PostgreSQL
+        def _get_db_info_side_effect(user_id, db_type=None):
+            if db_type == "mysql":
+                return {"db_type": "mysql", "db_name": "sandbox_existing", "db_user": "existing",
+                        "db_host": "localhost", "db_port": 3306, "db_password": "pw"}
+            return None  # no postgres yet
+
+        with patch("app.routes.dashboard.get_user_db_info", side_effect=_get_db_info_side_effect), \
+             patch("app.routes.dashboard.create_user_database", return_value=fake_info):
+            resp = client.post(
+                "/api/create-database",
+                json={"db_type": "postgres", "username": "pguser", "password": "Pass1234!"},
+            )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["success"]
+        assert data["db_info"]["db_type"] == "postgres"
 
     def test_create_db_validation_error(self, client):
         """ValueError from service should return 400."""

@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 from app.services.auth_service import get_user_by_id
 from app.services.db_admin_service import (
     create_user_database,
+    get_all_user_dbs,
     get_user_db_info,
     is_username_available,
 )
@@ -36,15 +37,22 @@ def dashboard():
     login_type = session.get("login_type", "email")
     display_name = _get_display_name(user, login_type)
 
-    # Smart detection: check if user already has a sandbox database
-    db_info = get_user_db_info(session["user_id"])
+    # Smart detection: check if user already has sandbox databases (per type)
+    all_dbs = get_all_user_dbs(session["user_id"])
+    mysql_db = all_dbs.get("mysql")
+    postgres_db = all_dbs.get("postgres")
+
+    # backward-compat: db_info = first available DB (mysql preferred)
+    db_info = mysql_db or postgres_db
 
     return render_template(
         "dashboard.html",
         user=user,
         display_name=display_name,
         login_type=login_type,
-        db_info=db_info,  # None → show create form; dict → show existing DB info
+        db_info=db_info,
+        mysql_db=mysql_db,
+        postgres_db=postgres_db,
     )
 
 
@@ -63,20 +71,20 @@ def check_username():
 
 @dashboard_bp.route("/api/create-database", methods=["POST"])
 def create_database():
-    """Create a per-user sandbox database (one-time operation)."""
+    """Create a per-user sandbox database (one per type per user)."""
     if "user_id" not in session:
         return jsonify({"success": False, "error": "Not authenticated"}), 401
 
     user_id = session["user_id"]
 
-    # Prevent duplicate creation
-    if get_user_db_info(user_id) is not None:
-        return jsonify({"success": False, "error": "You already have a database."}), 409
-
     data = request.get_json(silent=True) or {}
     db_type = data.get("db_type", "mysql").strip()
     username = data.get("username", "").strip()
     password = data.get("password", "").strip()
+
+    # Prevent duplicate creation for this specific db_type
+    if get_user_db_info(user_id, db_type) is not None:
+        return jsonify({"success": False, "error": f"You already have a {db_type} database."}), 409
 
     if not username or not password:
         return jsonify({"success": False, "error": "Username and password are required."}), 400

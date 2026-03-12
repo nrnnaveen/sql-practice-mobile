@@ -102,7 +102,7 @@ class TestDbAdminServiceValidation:
 
         from app.services.db_admin_service import get_user_db_info
         from app.utils.db_init import DB_PATH
-        # Insert a user without db_created
+        # Insert a user without any DB row
         conn = sqlite3.connect(DB_PATH)
         conn.execute("INSERT INTO users (id, email, password) VALUES (999, 'nodb@x.com', '')")
         conn.commit()
@@ -124,10 +124,12 @@ class TestDbAdminServiceValidation:
 
         enc_pw = encrypt_password("mypassword")
         conn = sqlite3.connect(DB_PATH)
+        # Insert a user first (FK constraint)
+        conn.execute("INSERT INTO users (id, email, password) VALUES (998, 'hasdb@x.com', '')")
+        # Insert into the new user_databases table
         conn.execute(
-            "INSERT INTO users (id, email, password, db_created, db_type, db_name, "
-            "db_user, db_password, db_host, db_port) "
-            "VALUES (998, 'hasdb@x.com', '', 1, 'mysql', 'sandbox_foo', 'foo', ?, 'localhost', 3306)",
+            "INSERT INTO user_databases (user_id, db_type, db_name, db_user, db_password, db_host, db_port) "
+            "VALUES (998, 'mysql', 'sandbox_foo', 'foo', ?, 'localhost', 3306)",
             (enc_pw,),
         )
         conn.commit()
