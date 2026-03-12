@@ -6,8 +6,8 @@ Responsible for:
 - Loading sample data (employees, products, orders)
 - Retrieving stored credentials
 
-Design: one database + one database user per application user.
-Credentials are stored encrypted in the local SQLite ``users`` table.
+Design: one MySQL database AND one PostgreSQL database per user (both optional).
+Credentials are stored encrypted in the local SQLite ``user_databases`` table.
 """
 import logging
 import re
@@ -119,6 +119,9 @@ def create_user_database(user_id: int, db_type: str, username: str, password: st
     Returns a dict with keys: ``db_name``, ``db_user``, ``db_host``,
     ``db_port``, ``db_type``.  Raises ``ValueError`` on validation failure and
     ``RuntimeError`` on infrastructure errors.
+
+    Each user may have one MySQL AND one PostgreSQL database.  Attempting to
+    create a second database of the *same* type raises ``ValueError``.
     """
     # --- validate inputs ---
     if not _USERNAME_RE.match(username):
@@ -147,7 +150,7 @@ def create_user_database(user_id: int, db_type: str, username: str, password: st
         logger.error("Failed to create database for user %d: %s", user_id, exc)
         raise RuntimeError(f"Database creation failed: {exc}") from exc
 
-    # Persist encrypted credentials
+    # Persist encrypted credentials in user_databases table
     _store_credentials(user_id, db_type, db_name, username, password, info["host"], info["port"])
 
     return {
@@ -159,8 +162,12 @@ def create_user_database(user_id: int, db_type: str, username: str, password: st
     }
 
 
-def get_user_db_info(user_id: int) -> dict | None:
+def get_user_db_info(user_id: int, db_type: str = None) -> dict | None:
     """Return connection info for *user_id*'s sandbox database, or *None*.
+
+    If *db_type* is given, returns info for that specific type ('mysql' or
+    'postgres').  If *db_type* is ``None``, returns the first database found
+    (mysql preferred) for backward compatibility.
 
     The returned dict includes ``db_type``, ``db_name``, ``db_user``,
     ``db_host``, ``db_port``, and ``db_password`` (decrypted).
@@ -168,13 +175,22 @@ def get_user_db_info(user_id: int) -> dict | None:
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
-        row = conn.execute(
-            "SELECT db_created, db_type, db_name, db_user, db_password, db_host, db_port "
-            "FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
+        if db_type:
+            row = conn.execute(
+                "SELECT db_type, db_name, db_user, db_password, db_host, db_port "
+                "FROM user_databases WHERE user_id = ? AND db_type = ?",
+                (user_id, db_type),
+            ).fetchone()
+        else:
+            # Return the first available (mysql preferred)
+            row = conn.execute(
+                "SELECT db_type, db_name, db_user, db_password, db_host, db_port "
+                "FROM user_databases WHERE user_id = ? "
+                "ORDER BY CASE db_type WHEN 'mysql' THEN 0 ELSE 1 END LIMIT 1",
+                (user_id,),
+            ).fetchone()
         conn.close()
-        if not row or not row["db_created"]:
+        if not row:
             return None
         return {
             "db_type": row["db_type"],
@@ -187,6 +203,16 @@ def get_user_db_info(user_id: int) -> dict | None:
     except Exception as exc:
         logger.error("Error fetching DB info for user %d: %s", user_id, exc)
         return None
+
+
+def get_all_user_dbs(user_id: int) -> dict:
+    """Return a dict with keys 'mysql' and 'postgres', each being the
+    connection-info dict (or ``None``) for the respective database type.
+    """
+    return {
+        "mysql": get_user_db_info(user_id, "mysql"),
+        "postgres": get_user_db_info(user_id, "postgres"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -339,16 +365,10 @@ def _store_credentials(
     encrypted = encrypt_password(password)
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
-        """UPDATE users
-           SET db_created  = 1,
-               db_type     = ?,
-               db_name     = ?,
-               db_user     = ?,
-               db_password = ?,
-               db_host     = ?,
-               db_port     = ?
-           WHERE id = ?""",
-        (db_type, db_name, username, encrypted, host, port, user_id),
+        """INSERT OR REPLACE INTO user_databases
+           (user_id, db_type, db_name, db_user, db_password, db_host, db_port)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (user_id, db_type, db_name, username, encrypted, host, port),
     )
     conn.commit()
     conn.close()

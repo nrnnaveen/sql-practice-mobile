@@ -214,7 +214,7 @@ async function saveBookmark() {
   const desc = (document.getElementById("bookmark-desc").value || "").trim();
   const tags = (document.getElementById("bookmark-tags").value || "").trim();
   const query = window.editor ? window.editor.getValue().trim() : "";
-  const dbType = document.getElementById("db-select").value;
+  const dbType = _activeDbType();
 
   if (!name) {
     showToast("Please enter a bookmark name.", "error");
@@ -332,8 +332,12 @@ async function openTemplatesModal() {
   if (!container) return;
   container.innerHTML = "<p class='loading-text'>Loading…</p>";
 
+  // Use database-specific templates when the editor is locked to a DB type
+  const dbType = window.EDITOR_DB_TYPE || "";
+  const url = dbType ? `/api/templates?db_type=${encodeURIComponent(dbType)}` : "/api/templates";
+
   try {
-    const resp = await fetch("/api/templates");
+    const resp = await fetch(url);
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || "Failed");
 
@@ -381,9 +385,15 @@ function useTemplate(query) {
 
 // ── Export results ────────────────────────────────────────────────────────────
 
+/** Return the active database type for the current editor page. */
+function _activeDbType() {
+  const dbSelect = document.getElementById("db-select");
+  return dbSelect ? dbSelect.value : (window.EDITOR_DB_TYPE || "mysql");
+}
+
 function exportResults(format) {
   const query = window.editor ? window.editor.getValue().trim() : "";
-  const db = document.getElementById("db-select").value;
+  const db = _activeDbType();
   if (!query) {
     showToast("No query to export.", "error");
     return;

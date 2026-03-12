@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Built-in query templates (read-only, shipped with the app)
 # ---------------------------------------------------------------------------
+
+# Shared/generic templates (used when no db_type specified)
 QUERY_TEMPLATES = [
     {
         "id": 1,
@@ -129,6 +131,246 @@ QUERY_TEMPLATES = [
     },
 ]
 
+# MySQL-specific templates (use MySQL syntax: AUTO_INCREMENT, TINYINT, etc.)
+QUERY_TEMPLATES_MYSQL = [
+    {
+        "id": 1,
+        "name": "CREATE DATABASE",
+        "description": "Create a new MySQL database",
+        "query": "CREATE DATABASE IF NOT EXISTS my_practice_db;\nUSE my_practice_db;",
+        "category": "ddl",
+    },
+    {
+        "id": 2,
+        "name": "CREATE TABLE",
+        "description": "Create a table with MySQL syntax",
+        "query": (
+            "CREATE TABLE IF NOT EXISTS users (\n"
+            "    id       INT PRIMARY KEY AUTO_INCREMENT,\n"
+            "    name     VARCHAR(100) NOT NULL,\n"
+            "    email    VARCHAR(200) UNIQUE,\n"
+            "    age      INT,\n"
+            "    active   TINYINT(1) DEFAULT 1,\n"
+            "    created  DATETIME DEFAULT CURRENT_TIMESTAMP\n"
+            ");"
+        ),
+        "category": "ddl",
+    },
+    {
+        "id": 3,
+        "name": "INSERT rows",
+        "description": "Insert multiple rows into a table",
+        "query": (
+            "INSERT INTO users (name, email, age) VALUES\n"
+            "    ('Alice', 'alice@example.com', 30),\n"
+            "    ('Bob',   'bob@example.com',   25),\n"
+            "    ('Carol', 'carol@example.com', 35);"
+        ),
+        "category": "dml",
+    },
+    {
+        "id": 4,
+        "name": "SELECT all",
+        "description": "Select all rows from a table",
+        "query": "SELECT * FROM users;",
+        "category": "basics",
+    },
+    {
+        "id": 5,
+        "name": "SELECT with WHERE",
+        "description": "Filter rows by condition",
+        "query": "SELECT id, name, email FROM users WHERE age > 28 ORDER BY name ASC;",
+        "category": "basics",
+    },
+    {
+        "id": 6,
+        "name": "UPDATE rows",
+        "description": "Modify existing rows",
+        "query": "UPDATE users SET active = 0 WHERE age < 26;",
+        "category": "dml",
+    },
+    {
+        "id": 7,
+        "name": "DELETE rows",
+        "description": "Remove rows matching a condition",
+        "query": "DELETE FROM users WHERE active = 0;",
+        "category": "dml",
+    },
+    {
+        "id": 8,
+        "name": "ALTER TABLE – add column",
+        "description": "Add a new column to an existing table",
+        "query": "ALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER email;",
+        "category": "ddl",
+    },
+    {
+        "id": 9,
+        "name": "JOIN example",
+        "description": "Join employees with orders",
+        "query": (
+            "SELECT e.name, o.order_date, p.name AS product, o.total_price\n"
+            "FROM employees e\n"
+            "INNER JOIN orders o ON e.id = o.employee_id\n"
+            "INNER JOIN products p ON p.id = o.product_id\n"
+            "ORDER BY o.order_date DESC\n"
+            "LIMIT 10;"
+        ),
+        "category": "joins",
+    },
+    {
+        "id": 10,
+        "name": "GROUP BY aggregate",
+        "description": "Count employees per department",
+        "query": (
+            "SELECT department, COUNT(*) AS headcount, AVG(salary) AS avg_salary\n"
+            "FROM employees\n"
+            "GROUP BY department\n"
+            "ORDER BY headcount DESC;"
+        ),
+        "category": "aggregation",
+    },
+    {
+        "id": 11,
+        "name": "DROP TABLE",
+        "description": "Remove a table (careful!)",
+        "query": "DROP TABLE IF EXISTS users;",
+        "category": "ddl",
+    },
+    {
+        "id": 12,
+        "name": "SHOW TABLES",
+        "description": "List all tables in the current database",
+        "query": "SHOW TABLES;",
+        "category": "basics",
+    },
+]
+
+# PostgreSQL-specific templates (use PG syntax: SERIAL, TEXT, NOW(), etc.)
+QUERY_TEMPLATES_PG = [
+    {
+        "id": 1,
+        "name": "CREATE TABLE",
+        "description": "Create a table with PostgreSQL syntax",
+        "query": (
+            "CREATE TABLE IF NOT EXISTS users (\n"
+            "    id      SERIAL PRIMARY KEY,\n"
+            "    name    VARCHAR(100) NOT NULL,\n"
+            "    email   VARCHAR(200) UNIQUE,\n"
+            "    age     INTEGER,\n"
+            "    active  BOOLEAN DEFAULT TRUE,\n"
+            "    created TIMESTAMPTZ DEFAULT NOW()\n"
+            ");"
+        ),
+        "category": "ddl",
+    },
+    {
+        "id": 2,
+        "name": "INSERT rows",
+        "description": "Insert multiple rows using PostgreSQL syntax",
+        "query": (
+            "INSERT INTO users (name, email, age) VALUES\n"
+            "    ('Alice', 'alice@example.com', 30),\n"
+            "    ('Bob',   'bob@example.com',   25),\n"
+            "    ('Carol', 'carol@example.com', 35)\n"
+            "RETURNING id, name;"
+        ),
+        "category": "dml",
+    },
+    {
+        "id": 3,
+        "name": "SELECT all",
+        "description": "Select all rows from a table",
+        "query": "SELECT * FROM users;",
+        "category": "basics",
+    },
+    {
+        "id": 4,
+        "name": "SELECT with WHERE",
+        "description": "Filter rows by condition",
+        "query": "SELECT id, name, email FROM users WHERE age > 28 ORDER BY name ASC;",
+        "category": "basics",
+    },
+    {
+        "id": 5,
+        "name": "UPDATE rows",
+        "description": "Modify existing rows (PostgreSQL)",
+        "query": "UPDATE users SET active = FALSE WHERE age < 26 RETURNING id, name;",
+        "category": "dml",
+    },
+    {
+        "id": 6,
+        "name": "DELETE rows",
+        "description": "Remove rows matching a condition",
+        "query": "DELETE FROM users WHERE active = FALSE RETURNING id;",
+        "category": "dml",
+    },
+    {
+        "id": 7,
+        "name": "ALTER TABLE – add column",
+        "description": "Add a new column to an existing table",
+        "query": "ALTER TABLE users ADD COLUMN phone TEXT;",
+        "category": "ddl",
+    },
+    {
+        "id": 8,
+        "name": "JOIN example",
+        "description": "Join employees with orders",
+        "query": (
+            "SELECT e.name, o.order_date, p.name AS product, o.total_price\n"
+            "FROM employees e\n"
+            "INNER JOIN orders o ON e.id = o.employee_id\n"
+            "INNER JOIN products p ON p.id = o.product_id\n"
+            "ORDER BY o.order_date DESC\n"
+            "LIMIT 10;"
+        ),
+        "category": "joins",
+    },
+    {
+        "id": 9,
+        "name": "GROUP BY aggregate",
+        "description": "Count employees per department",
+        "query": (
+            "SELECT department, COUNT(*) AS headcount, AVG(salary) AS avg_salary\n"
+            "FROM employees\n"
+            "GROUP BY department\n"
+            "ORDER BY headcount DESC;"
+        ),
+        "category": "aggregation",
+    },
+    {
+        "id": 10,
+        "name": "CTE (WITH clause)",
+        "description": "Use a common table expression",
+        "query": (
+            "WITH dept_stats AS (\n"
+            "    SELECT department, COUNT(*) AS cnt, MAX(salary) AS max_sal\n"
+            "    FROM employees\n"
+            "    GROUP BY department\n"
+            ")\n"
+            "SELECT * FROM dept_stats WHERE cnt > 1 ORDER BY max_sal DESC;"
+        ),
+        "category": "advanced",
+    },
+    {
+        "id": 11,
+        "name": "Window Function (RANK)",
+        "description": "Rank employees by salary within department",
+        "query": (
+            "SELECT name, department, salary,\n"
+            "    RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank\n"
+            "FROM employees;"
+        ),
+        "category": "advanced",
+    },
+    {
+        "id": 12,
+        "name": "DROP TABLE",
+        "description": "Remove a table (careful!)",
+        "query": "DROP TABLE IF EXISTS users;",
+        "category": "ddl",
+    },
+]
+
 
 # ---------------------------------------------------------------------------
 # Templates endpoints
@@ -137,13 +379,25 @@ QUERY_TEMPLATES = [
 @api_bp.route("/templates", methods=["GET"])
 @login_required
 def get_templates():
-    """Return the list of built-in query templates."""
+    """Return the list of built-in query templates.
+
+    Accepts optional query params:
+    - ``category``: filter by category (e.g. 'basics', 'ddl', 'dml')
+    - ``db_type``: 'mysql' or 'postgres' to get database-specific templates
+    """
     category = request.args.get("category")
-    if category:
-        filtered = [t for t in QUERY_TEMPLATES if t["category"] == category]
+    db_type = request.args.get("db_type", "").strip().lower()
+
+    if db_type == "mysql":
+        templates = QUERY_TEMPLATES_MYSQL
+    elif db_type in ("postgres", "postgresql"):
+        templates = QUERY_TEMPLATES_PG
     else:
-        filtered = QUERY_TEMPLATES
-    return jsonify({"templates": filtered})
+        templates = QUERY_TEMPLATES
+
+    if category:
+        templates = [t for t in templates if t["category"] == category]
+    return jsonify({"templates": templates})
 
 
 # ---------------------------------------------------------------------------

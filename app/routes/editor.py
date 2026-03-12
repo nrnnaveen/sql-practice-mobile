@@ -140,9 +140,13 @@ def _run_sandbox_query(db_info: dict, query: str) -> dict:
         return {"error": str(exc)}
 
 
-@editor_bp.route("/editor", methods=["GET", "POST"])
-@rate_limit
-def editor():
+def _run_editor(db_type_filter: str = None):
+    """Shared logic for all editor routes.
+
+    If *db_type_filter* is 'mysql' or 'postgres', the editor is locked to the
+    user's sandbox database of that type (or redirects to dashboard if not
+    created yet).  If ``None``, the original single-DB behaviour is used.
+    """
     if "user_id" not in session:
         return redirect("/login")
 
@@ -150,15 +154,20 @@ def editor():
     result = None
     last_query = ""
     settings = _get_user_settings(user_id)
-    selected_db = settings.get("default_database", "mysql")
     page = 1
     total_rows = 0
     has_more = False
 
-    # Check if this user has their own sandbox database
-    sandbox_db = get_user_db_info(user_id)
-    if sandbox_db:
-        selected_db = sandbox_db["db_type"]
+    # Determine the sandbox DB to use
+    if db_type_filter:
+        sandbox_db = get_user_db_info(user_id, db_type_filter)
+        if sandbox_db is None:
+            # User hasn't created this type of DB yet – send them to dashboard
+            return redirect("/dashboard")
+        selected_db = db_type_filter
+    else:
+        sandbox_db = get_user_db_info(user_id)
+        selected_db = sandbox_db["db_type"] if sandbox_db else settings.get("default_database", "mysql")
 
     if request.method == "POST":
         query = request.form.get("query", "").strip()
@@ -166,7 +175,7 @@ def editor():
         page = int(request.form.get("page", 1))
         per_page = int(settings.get("results_per_page", DEFAULT_RESULTS_PER_PAGE))
 
-        if not sandbox_db:
+        if not sandbox_db and not db_type_filter:
             selected_db = request.form.get("database", selected_db)
 
         if query:
@@ -227,12 +236,33 @@ def editor():
         last_query=last_query,
         selected_db=selected_db,
         sandbox_db=sandbox_db,
+        db_type_filter=db_type_filter,
         theme=settings.get("theme", "dark"),
         page=page,
         total_rows=total_rows,
         has_more=has_more,
         results_per_page=int(settings.get("results_per_page", DEFAULT_RESULTS_PER_PAGE)),
     )
+
+
+@editor_bp.route("/editor", methods=["GET", "POST"])
+@rate_limit
+def editor():
+    return _run_editor(db_type_filter=None)
+
+
+@editor_bp.route("/editor/mysql", methods=["GET", "POST"])
+@rate_limit
+def editor_mysql():
+    """MySQL-specific sandbox editor."""
+    return _run_editor(db_type_filter="mysql")
+
+
+@editor_bp.route("/editor/postgresql", methods=["GET", "POST"])
+@rate_limit
+def editor_postgresql():
+    """PostgreSQL-specific sandbox editor."""
+    return _run_editor(db_type_filter="postgres")
 
 
 @editor_bp.route("/editor/export", methods=["POST"])
@@ -250,7 +280,7 @@ def export_results():
     if not query:
         return jsonify({"error": "No query provided."}), 400
 
-    sandbox_db = get_user_db_info(user_id)
+    sandbox_db = get_user_db_info(user_id, selected_db) or get_user_db_info(user_id)
     if sandbox_db:
         raw_result = _run_sandbox_query(sandbox_db, query)
     else:

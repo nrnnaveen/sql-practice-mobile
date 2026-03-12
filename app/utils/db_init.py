@@ -20,7 +20,7 @@ def _migrate(conn):
         ("name", "TEXT"),
         ("picture", "TEXT"),
         ("google_id", "TEXT"),
-        # Per-user sandbox database tracking
+        # Legacy single-DB columns kept for backward compatibility
         ("db_created", "INTEGER"),
         ("db_type", "TEXT"),
         ("db_name", "TEXT"),
@@ -42,6 +42,28 @@ def _migrate(conn):
                 continue
             cur.execute(f"ALTER TABLE users ADD COLUMN {col} {col_type}")
             logger.info("Migrated users table: added column %s", col)
+
+    # ── user_databases table (multi-DB support) ──────────────────────────────
+    # Create if it doesn't exist (handled below in init_db as well, but this
+    # covers databases created before this schema version).
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_databases (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id     INTEGER NOT NULL,
+            db_type     TEXT NOT NULL,
+            db_name     TEXT NOT NULL,
+            db_user     TEXT NOT NULL,
+            db_password TEXT NOT NULL,
+            db_host     TEXT NOT NULL,
+            db_port     INTEGER NOT NULL,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, db_type),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """
+    )
+    logger.info("Ensured user_databases table exists (migration)")
 
     # ── query_history table ──────────────────────────────────────────────────
     existing_qh = {row[1] for row in cur.execute("PRAGMA table_info(query_history)")}
@@ -136,6 +158,24 @@ def init_db():
                 theme            TEXT NOT NULL DEFAULT 'dark',
                 default_database TEXT NOT NULL DEFAULT 'mysql',
                 results_per_page INTEGER NOT NULL DEFAULT 100,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+            """
+        )
+        # Per-user multi-database support: one row per (user, db_type)
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_databases (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL,
+                db_type     TEXT NOT NULL,
+                db_name     TEXT NOT NULL,
+                db_user     TEXT NOT NULL,
+                db_password TEXT NOT NULL,
+                db_host     TEXT NOT NULL,
+                db_port     INTEGER NOT NULL,
+                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, db_type),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
             """
