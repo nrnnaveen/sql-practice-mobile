@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Q{{ question_num }}/{{ total_questions }} – {{ diff_info.label }} {{ db_type | upper }} Practice</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  /* ── Practice Layout ── */
+  .practice-layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-top:1rem;}
+  @media(max-width:900px){.practice-layout{grid-template-columns:1fr;}}
+  .practice-main{min-width:0;}
+
+  /* ── Header / Nav ── */
+  .practice-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;}
+  .practice-header-left{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
+  .back-link{color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;}
+  .back-link:hover{color:inherit;}
+  .db-badge-sm{display:inline-block;padding:0.15rem 0.6rem;border-radius:4px;font-weight:700;font-size:0.75rem;text-transform:uppercase;color:#fff;}
+  .db-badge-sm.mysql{background:#f59e0b;}
+  .db-badge-sm.postgres{background:#3b82f6;}
+  .diff-badge{display:inline-block;padding:0.15rem 0.6rem;border-radius:4px;font-size:0.8rem;font-weight:600;}
+
+  /* ── Progress bar ── */
+  .progress-wrap{background:rgba(255,255,255,0.1);border-radius:999px;height:6px;margin:0.5rem 0 1rem;overflow:hidden;}
+  .progress-fill{height:6px;border-radius:999px;background:var(--accent,#7c3aed);transition:width 0.4s ease;}
+
+  /* ── Question card ── */
+  .question-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+  .question-label{font-size:0.75rem;text-transform:uppercase;font-weight:700;letter-spacing:0.05em;color:var(--text-muted,#aaa);margin-bottom:0.5rem;}
+  .question-topic{display:inline-block;background:rgba(124,58,237,0.2);color:var(--accent,#7c3aed);border-radius:4px;padding:0.15rem 0.5rem;font-size:0.8rem;margin-bottom:0.75rem;}
+  .question-text{font-size:1rem;line-height:1.6;font-weight:500;}
+  .hint-btn{background:none;border:1px solid var(--border,#444);color:var(--text-muted,#aaa);padding:0.3rem 0.75rem;border-radius:6px;cursor:pointer;font-size:0.85rem;margin-top:0.75rem;}
+  .hint-btn:hover{background:rgba(255,255,255,0.05);}
+  .hint-box{background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);border-radius:6px;padding:0.75rem;margin-top:0.75rem;font-size:0.9rem;color:#facc15;display:none;}
+  .hint-box.show{display:block;}
+
+  /* ── Editor card ── */
+  .editor-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+  .monaco-box{height:160px;border-radius:6px;overflow:hidden;border:1px solid var(--border,#444);margin-bottom:0.75rem;}
+  .run-bar{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;}
+  .btn-run{background:#4ade80;color:#000;border:none;padding:0.65rem 1.5rem;border-radius:8px;font-size:0.95rem;font-weight:700;cursor:pointer;min-height:44px;}
+  .btn-run:hover{background:#22c55e;}
+  .btn-run:disabled{opacity:0.5;cursor:not-allowed;}
+  .btn-secondary{background:none;border:1px solid var(--border,#444);color:inherit;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;cursor:pointer;min-height:44px;}
+  .btn-secondary:hover{background:rgba(255,255,255,0.05);}
+  .shortcut-hint{font-size:0.8rem;color:var(--text-muted,#aaa);}
+
+  /* ── Result card ── */
+  .result-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+  .result-meta{font-size:0.85rem;color:var(--text-muted,#aaa);margin-bottom:0.75rem;}
+  .table-scroll{overflow-x:auto;}
+  .table-scroll table{min-width:100%;}
+  .error-msg{color:#f87171;font-size:0.95rem;padding:0.5rem 0;}
+  .success-msg{color:#4ade80;font-size:0.95rem;padding:0.5rem 0;}
+
+  /* ── Congratulations ── */
+  .congrats-card{background:linear-gradient(135deg,rgba(74,222,128,0.15),rgba(34,197,94,0.1));border:2px solid #4ade80;border-radius:12px;padding:1.5rem;margin-bottom:1rem;text-align:center;}
+  .congrats-card h3{color:#4ade80;margin:0 0 0.5rem;font-size:1.3rem;}
+  .congrats-card p{color:var(--text-muted,#ccc);margin:0 0 1rem;}
+  .btn-next{background:#4ade80;color:#000;border:none;padding:0.75rem 2rem;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;min-height:48px;}
+  .btn-next:hover{background:#22c55e;}
+
+  /* ── Navigation ── */
+  .nav-bar{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+  .nav-btns{display:flex;gap:0.5rem;}
+  .btn-nav{background:none;border:1px solid var(--border,#444);color:inherit;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;text-decoration:none;min-height:40px;}
+  .btn-nav:hover{background:rgba(255,255,255,0.05);}
+  .btn-nav:disabled{opacity:0.3;cursor:not-allowed;}
+  .q-counter{font-size:0.9rem;color:var(--text-muted,#aaa);}
+  .completed-check{color:#4ade80;margin-left:0.3rem;}
+
+  /* ── History panel ── */
+  .history-panel{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.25rem;}
+  .history-panel h4{margin:0 0 0.75rem;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#aaa);}
+  .history-item{padding:0.5rem;border-radius:6px;cursor:pointer;margin-bottom:0.4rem;font-size:0.8rem;word-break:break-all;}
+  .history-item:hover{background:rgba(255,255,255,0.05);}
+  .history-query{font-family:monospace;display:block;color:var(--text-muted,#ccc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .history-empty{color:var(--text-muted,#aaa);font-size:0.85rem;}
+
+  /* ── Sample answer ── */
+  .sample-btn{background:none;border:1px solid var(--border,#444);color:var(--text-muted,#aaa);padding:0.3rem 0.75rem;border-radius:6px;cursor:pointer;font-size:0.85rem;}
+  .sample-btn:hover{background:rgba(255,255,255,0.05);}
+  .sample-answer-box{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:0.75rem;margin-top:0.75rem;font-family:monospace;font-size:0.85rem;color:#93c5fd;display:none;white-space:pre-wrap;}
+  .sample-answer-box.show{display:block;}
+</style>
+</head>
+<body class="dashboard-bg">
+
+<nav class="dash-nav">
+  <span class="dash-nav-brand">&#x25A0; SQL Playground</span>
+  <div style="display:flex;gap:0.75rem;align-items:center;">
+    <a href="{{ url_for('practice.select_difficulty', db_type=db_type) }}" class="back-link">&#x2190; Difficulty Select</a>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="back-link">&#x1F3E0;</a>
+    <a href="{{ url_for('auth.logout') }}" style="color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;">&#x23FB;</a>
+  </div>
+</nav>
+
+<main class="dash-main" style="padding-top:0.5rem;">
+<div class="dash-card fade-in" style="padding:1rem;">
+
+  <!-- Header -->
+  <div class="practice-header">
+    <div class="practice-header-left">
+      <span class="db-badge-sm {{ db_type }}">{{ db_type | upper }}</span>
+      <span class="diff-badge" style="background:{{ diff_info.color }}22;color:{{ diff_info.color }};">
+        {{ diff_info.emoji }} {{ diff_info.label }}
+      </span>
+      <span style="font-size:0.9rem;color:var(--text-muted,#aaa);">
+        Question <strong>{{ question_num }}</strong> of <strong>{{ total_questions }}</strong>
+      </span>
+    </div>
+    <span class="q-counter">{{ completed_ids | length }}/{{ total_questions }} done</span>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progressFill"
+         style="width:{{ ((completed_ids | length / total_questions) * 100) | int }}%;background:{{ diff_info.color }};"></div>
+  </div>
+
+  <!-- Question navigation -->
+  <div class="nav-bar">
+    <div class="nav-btns">
+      {% if question_num > 1 %}
+      <a href="{{ url_for('practice.practice_question', db_type=db_type, difficulty=difficulty, qid=question_num - 1) }}"
+         class="btn-nav">&#x2190; Prev</a>
+      {% else %}
+      <button class="btn-nav" disabled>&#x2190; Prev</button>
+      {% endif %}
+
+      {% if question_num < total_questions %}
+      <a href="{{ url_for('practice.practice_question', db_type=db_type, difficulty=difficulty, qid=question_num + 1) }}"
+         class="btn-nav">Next &#x2192;</a>
+      {% else %}
+      <a href="{{ url_for('practice.practice_complete', db_type=db_type, difficulty=difficulty) }}"
+         class="btn-nav">Finish &#x1F3C6;</a>
+      {% endif %}
+    </div>
+    <div style="font-size:0.85rem;color:var(--text-muted,#aaa);">
+      Topic: <strong>{{ question.topic }}</strong>
+      {% if is_completed %}
+        <span class="completed-check">&#x2713; Completed</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="practice-layout">
+    <div class="practice-main">
+
+      <!-- Question -->
+      <div class="question-card">
+        <div class="question-label">&#x1F4DD; Question {{ question_num }}</div>
+        <div class="question-topic">{{ question.topic }}</div>
+        <p class="question-text">{{ question.question }}</p>
+        <button class="hint-btn" onclick="toggleHint()">&#x1F4A1; Show Hint</button>
+        <div class="hint-box" id="hintBox">{{ question.hint }}</div>
+      </div>
+
+      <!-- SQL Editor -->
+      <div class="editor-card">
+        <div class="question-label" style="margin-bottom:0.5rem;">&#x270A; Your SQL Answer</div>
+        <div id="monacoEditor" class="monaco-box"></div>
+        <textarea id="queryTextarea" hidden></textarea>
+        <div class="run-bar">
+          <button class="btn-run" id="runBtn" onclick="runQuery()">
+            <span id="runSpinner" class="spinner hidden"></span>
+            &#x25B6; Run Query
+          </button>
+          <button class="btn-secondary" onclick="clearEditor()">&#x21BA; Reset</button>
+          {% if is_completed %}
+          <button class="sample-btn" onclick="toggleSampleAnswer()">&#x1F4D6; Sample Answer</button>
+          {% endif %}
+          <span class="shortcut-hint">Ctrl+Enter</span>
+        </div>
+        <div class="sample-answer-box" id="sampleAnswerBox">{{ question.sample_answer }}</div>
+      </div>
+
+      <!-- Result area (populated via JS) -->
+      <div id="resultArea"></div>
+
+      <!-- Congratulations (shown after correct answer) -->
+      <div class="congrats-card" id="congratsCard" style="display:none;">
+        <h3>&#x2728; Congratulations! &#x2728;</h3>
+        <p>Your query ran successfully. Well done on completing Question {{ question_num }}!</p>
+        <div id="nextBtnWrap"></div>
+      </div>
+
+    </div><!-- /practice-main -->
+
+    <!-- History panel -->
+    <div class="history-panel">
+      <h4>&#x1F4DC; Query History</h4>
+      <div id="historyList">
+        {% if history %}
+          {% for item in history %}
+          <div class="history-item" onclick="loadHistoryQuery({{ item.query | tojson }})">
+            <span class="history-query">{{ item.query }}</span>
+            <span style="font-size:0.75rem;color:{% if item.success %}#4ade80{% else %}#f87171{% endif %};">
+              {% if item.success %}&#x2713;{% else %}&#x2717;{% endif %}
+              {% if item.execution_time is not none %}{{ "%.3f"|format(item.execution_time) }}s{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="history-empty">No history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- /practice-layout -->
+
+</div>
+</main>
+
+<!-- MONACO EDITOR -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var DB_TYPE    = {{ db_type | tojson }};
+  var DIFFICULTY = {{ difficulty | tojson }};
+  var Q_ID       = {{ question_num }};
+  var TOTAL_Q    = {{ total_questions }};
+  var IS_COMPLETED = {{ is_completed | tojson }};
+
+  // ── Monaco Editor setup ──────────────────────────────────────────────────
+  var monacoEditor;
+  require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+  require(['vs/editor/editor.main'], function () {
+    monacoEditor = monaco.editor.create(document.getElementById('monacoEditor'), {
+      value: '',
+      language: 'sql',
+      theme: document.documentElement.dataset.theme === 'light' ? 'vs' : 'vs-dark',
+      automaticLayout: true,
+      minimap: { enabled: false },
+      fontSize: 14,
+      lineNumbers: 'on',
+      wordWrap: 'on',
+    });
+    monacoEditor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+      function () { runQuery(); }
+    );
+  });
+
+  function getQuery() {
+    return monacoEditor ? monacoEditor.getValue().trim() : '';
+  }
+
+  window.clearEditor = function () {
+    if (monacoEditor) monacoEditor.setValue('');
+    document.getElementById('resultArea').innerHTML = '';
+    document.getElementById('congratsCard').style.display = 'none';
+  };
+
+  window.loadHistoryQuery = function (q) {
+    if (monacoEditor) monacoEditor.setValue(q);
+  };
+
+  window.toggleHint = function () {
+    var box = document.getElementById('hintBox');
+    box.classList.toggle('show');
+    var btn = document.querySelector('.hint-btn');
+    btn.textContent = box.classList.contains('show') ? '💡 Hide Hint' : '💡 Show Hint';
+  };
+
+  window.toggleSampleAnswer = function () {
+    var box = document.getElementById('sampleAnswerBox');
+    box.classList.toggle('show');
+  };
+
+  // ── Run query ────────────────────────────────────────────────────────────
+  window.runQuery = function () {
+    var query = getQuery();
+    if (!query) return;
+
+    var runBtn = document.getElementById('runBtn');
+    var spinner = document.getElementById('runSpinner');
+    runBtn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+
+    fetch('/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + Q_ID + '/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      runBtn.disabled = false;
+      if (spinner) spinner.classList.add('hidden');
+      renderResult(data);
+    })
+    .catch(function (err) {
+      runBtn.disabled = false;
+      if (spinner) spinner.classList.add('hidden');
+      renderResult({ error: 'Network error: ' + err.message });
+    });
+  };
+
+  function renderResult(data) {
+    var area = document.getElementById('resultArea');
+    var html = '';
+
+    if (data.error) {
+      html = '<div class="result-card"><p class="error-msg">&#10006; ' + escHtml(data.error) + '</p></div>';
+      area.innerHTML = html;
+      return;
+    }
+
+    var meta = '';
+    if (data.execution_time !== undefined) {
+      meta = '<div class="result-meta">Execution time: ' + data.execution_time.toFixed(3) + 's</div>';
+    }
+
+    if (data.columns && data.rows) {
+      var tableHtml = '<div class="table-scroll"><table><thead><tr>';
+      data.columns.forEach(function (c) { tableHtml += '<th>' + escHtml(String(c)) + '</th>'; });
+      tableHtml += '</tr></thead><tbody>';
+      data.rows.forEach(function (row) {
+        tableHtml += '<tr>';
+        row.forEach(function (cell) { tableHtml += '<td>' + escHtml(String(cell == null ? '' : cell)) + '</td>'; });
+        tableHtml += '</tr>';
+      });
+      tableHtml += '</tbody></table></div>';
+      html = '<div class="result-card">' + meta +
+             '<p class="result-meta">' + data.rows.length + ' row(s) returned</p>' +
+             tableHtml + '</div>';
+    } else if (data.message) {
+      html = '<div class="result-card">' + meta + '<p class="success-msg">&#10003; ' + escHtml(data.message) + '</p></div>';
+    }
+
+    area.innerHTML = html;
+
+    // Show congratulations
+    if (data.congratulations) {
+      var card = document.getElementById('congratsCard');
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Show sample answer button
+      var sampleBtn = document.querySelector('.sample-btn');
+      if (!sampleBtn) {
+        var runBar = document.querySelector('.run-bar');
+        sampleBtn = document.createElement('button');
+        sampleBtn.className = 'sample-btn';
+        sampleBtn.textContent = '📖 Sample Answer';
+        sampleBtn.onclick = window.toggleSampleAnswer;
+        runBar.appendChild(sampleBtn);
+      }
+
+      // Build next button
+      var wrap = document.getElementById('nextBtnWrap');
+      if (data.all_complete) {
+        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/complete" class="btn-next">&#x1F3C6; View Certificate!</a>';
+      } else {
+        var nextQ = data.next_question || (Q_ID + 1);
+        wrap.innerHTML = '<a href="/practice/' + DB_TYPE + '/' + DIFFICULTY + '/' + nextQ + '" class="btn-next">Next Question &#x2192;</a>';
+      }
+
+      // Update progress bar
+      if (data.completed_ids) {
+        var pct = Math.round((data.completed_ids.length / TOTAL_Q) * 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+      }
+    }
+
+    // Update history list
+    if (data.history) {
+      renderHistory(data.history);
+    }
+  }
+
+  function renderHistory(items) {
+    var list = document.getElementById('historyList');
+    var html = '';
+    items.forEach(function (item) {
+      html += '<div class="history-item" onclick="loadHistoryQuery(' + JSON.stringify(item.query) + ')">';
+      html += '<span class="history-query">' + escHtml(item.query) + '</span>';
+      html += '<span style="font-size:.75rem;color:' + (item.success ? '#4ade80' : '#f87171') + ';">';
+      html += (item.success ? '✓ ' : '✗ ');
+      if (item.execution_time != null) html += item.execution_time.toFixed(3) + 's';
+      html += '</span></div>';
+    });
+    list.innerHTML = html || '<p class="history-empty">No history yet.</p>';
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+}());
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{{ diff_info.label }} {{ db_type | upper }} Complete! &#x1F3C6;</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  .complete-page{max-width:600px;margin:0 auto;text-align:center;}
+  .trophy{font-size:5rem;margin-bottom:1rem;animation:pop 0.5s ease-out;}
+  @keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+  .complete-title{font-size:2rem;font-weight:800;margin:0 0 0.5rem;color:#4ade80;}
+  .complete-sub{font-size:1.1rem;color:var(--text-muted,#aaa);margin:0 0 2rem;}
+  .certificate{background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(124,58,237,0.1));border:2px solid var(--accent,#7c3aed);border-radius:16px;padding:2rem;margin:1.5rem 0;}
+  .cert-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted,#aaa);margin-bottom:0.5rem;}
+  .cert-title{font-size:1.6rem;font-weight:800;margin:0 0 0.25rem;}
+  .cert-sub{font-size:0.9rem;color:var(--text-muted,#aaa);margin:0;}
+  .cert-stats{display:flex;justify-content:center;gap:2rem;margin:1.5rem 0;flex-wrap:wrap;}
+  .cert-stat{text-align:center;}
+  .cert-stat-num{font-size:2rem;font-weight:800;color:var(--accent,#7c3aed);}
+  .cert-stat-label{font-size:0.8rem;color:var(--text-muted,#aaa);margin-top:0.25rem;}
+  .db-badge-lg{display:inline-block;padding:0.3rem 0.9rem;border-radius:6px;font-weight:700;font-size:0.9rem;text-transform:uppercase;color:#fff;margin-bottom:0.75rem;}
+  .db-badge-lg.mysql{background:#f59e0b;}
+  .db-badge-lg.postgres{background:#3b82f6;}
+  .action-btns{display:flex;flex-direction:column;gap:0.75rem;max-width:360px;margin:0 auto;}
+  .btn-primary-lg{background:var(--accent,#7c3aed);color:#fff;border:none;padding:0.9rem 2rem;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;display:block;min-height:52px;}
+  .btn-primary-lg:hover{opacity:0.9;}
+  .btn-secondary-lg{background:none;border:1px solid var(--border,#444);color:inherit;padding:0.8rem 2rem;border-radius:10px;font-size:0.95rem;cursor:pointer;text-decoration:none;display:block;min-height:48px;}
+  .btn-secondary-lg:hover{background:rgba(255,255,255,0.05);}
+  .diff-badge{display:inline-block;padding:0.2rem 0.8rem;border-radius:4px;font-size:0.85rem;font-weight:600;margin-left:0.5rem;}
+</style>
+</head>
+<body class="dashboard-bg">
+
+<nav class="dash-nav">
+  <span class="dash-nav-brand">&#x25A0; SQL Playground</span>
+  <div style="display:flex;gap:0.75rem;align-items:center;">
+    <a href="{{ url_for('practice.select_difficulty', db_type=db_type) }}"
+       style="color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;">&#x2190; Select Difficulty</a>
+    <a href="{{ url_for('dashboard.dashboard') }}"
+       style="color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;">&#x1F3E0;</a>
+    <a href="{{ url_for('auth.logout') }}"
+       style="color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;">&#x23FB;</a>
+  </div>
+</nav>
+
+<main class="dash-main">
+  <div class="dash-card fade-in complete-page">
+
+    <div class="trophy">&#x1F3C6;</div>
+    <h1 class="complete-title">You Did It!</h1>
+    <p class="complete-sub">
+      You've completed all {{ total_questions }} questions in the
+      <strong>{{ diff_info.label }}</strong> level!
+    </p>
+
+    <!-- Certificate -->
+    <div class="certificate">
+      <div class="cert-label">&#x1F396; Certificate of Completion</div>
+      <div style="margin-bottom:0.5rem;">
+        <span class="db-badge-lg {{ db_type }}">{{ db_type | upper }}</span>
+        <span class="diff-badge" style="background:{{ diff_info.color }}22;color:{{ diff_info.color }};">
+          {{ diff_info.emoji }} {{ diff_info.label }}
+        </span>
+      </div>
+      <div class="cert-title">SQL Practice Complete</div>
+      <p class="cert-sub">Successfully completed all questions</p>
+
+      <div class="cert-stats">
+        <div class="cert-stat">
+          <div class="cert-stat-num">{{ completed_count }}</div>
+          <div class="cert-stat-label">Questions Completed</div>
+        </div>
+        <div class="cert-stat">
+          <div class="cert-stat-num" style="color:{{ diff_info.color }};">{{ diff_info.emoji }}</div>
+          <div class="cert-stat-label">{{ diff_info.label }} Level</div>
+        </div>
+        <div class="cert-stat">
+          <div class="cert-stat-num">{{ db_type | upper }}</div>
+          <div class="cert-stat-label">Database</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-btns">
+      {% if next_difficulty %}
+      <a href="{{ url_for('practice.practice_start', db_type=db_type, difficulty=next_difficulty) }}"
+         class="btn-primary-lg">
+        &#x1F680; Try Next Level ({{ next_difficulty | capitalize }})
+      </a>
+      {% endif %}
+
+      <a href="{{ url_for('practice.practice_question', db_type=db_type, difficulty=difficulty, qid=1) }}"
+         class="btn-secondary-lg">
+        &#x1F501; Review Questions Again
+      </a>
+
+      <a href="{{ url_for('practice.select_difficulty', db_type=db_type) }}"
+         class="btn-secondary-lg">
+        &#x1F4DA; Select Different Level
+      </a>
+
+      <a href="{{ url_for('dashboard.dashboard') }}"
+         class="btn-secondary-lg">
+        &#x1F3E0; Back to Dashboard
+      </a>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

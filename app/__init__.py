@@ -54,11 +54,13 @@ def create_app():
     from app.routes.editor import editor_bp
     from app.routes.profile import profile_bp
     from app.routes.api import api_bp
+    from app.routes.practice import practice_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(editor_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(practice_bp)
 
     return app
