@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/database_visualization.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/practice_responsive.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
 <style>
   /* ── Practice Layout ── */
   .practice-layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-top:1rem;}
@@ -286,10 +287,10 @@
     return monacoEditor ? monacoEditor.getValue().trim() : '';
   }
 
+  // Clear button: only clears the editor, NOT output or history
   window.clearEditor = function () {
     if (monacoEditor) monacoEditor.setValue('');
-    document.getElementById('resultArea').innerHTML = '';
-    document.getElementById('congratsCard').style.display = 'none';
+    if (monacoEditor) monacoEditor.focus();
   };
 
   window.loadHistoryQuery = function (q) {

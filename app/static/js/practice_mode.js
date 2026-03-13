@@ -76,6 +76,11 @@
         '<p class="success-msg">&#10003; ' + esc(data.message) + '</p></div>';
     }
 
+    // Show validation feedback when answer is wrong but query ran
+    if (data.congratulations === false && data.feedback) {
+      html += '<div class="result-card"><p class="error-msg">&#10006; ' + esc(data.feedback) + '</p></div>';
+    }
+
     area.innerHTML = html;
 
     /* Congratulations */

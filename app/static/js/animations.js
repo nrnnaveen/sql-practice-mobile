@@ -233,37 +233,31 @@
 
       // 3s – fade highlight
       after(3000, function () { rmCls(table, 'hl-create'); });
-    } else {
-      // Create a temporary "new table" element in the container
-      var newTable = document.createElement('div');
-      newTable.className = 'dbviz-table hl-create anim-scale-pop';
-      newTable.innerHTML =
-        '<div class="dbviz-table-head"><span class="dbviz-table-icon">📋</span> new_table</div>' +
-        '<div class="dbviz-col-list">' +
-          '<div class="dbviz-col-row anim-slide-in-left anim-stagger-1">' +
-            '<span class="dbviz-col-badge pk">PK</span>' +
-            '<span class="dbviz-col-name">id</span>' +
-            '<span class="dbviz-col-type">INT</span>' +
-          '</div>' +
-          '<div class="dbviz-col-row anim-slide-in-left anim-stagger-2">' +
-            '<span class="dbviz-col-name">name</span>' +
-            '<span class="dbviz-col-type">VARCHAR</span>' +
-          '</div>' +
-        '</div>';
-      container.appendChild(newTable);
-      after(3500, function () {
-        rmCls(newTable, 'hl-create');
-        // Remove the temporary element after a brief pause
-        after(1500, function () {
-          newTable.parentNode && newTable.parentNode.removeChild(newTable);
-        });
-      });
     }
+    // If no existing table, the WorkbenchVisualizer handles adding it via
+    // createTableManager.addTable() which applies the entering CSS class.
 
     after(data.duration_ms || 3500, onComplete);
   }
 
-  /* ── ALTER / DROP animation ── */
+  /* ── DROP animation ── */
+  function animateDrop(container, data, sql, onComplete) {
+    clearHighlights(container);
+    var table = findTargetTable(container, sql);
+    if (!table) { after(100, onComplete); return; }
+
+    // Apply red glow + slide-out-left animation via CSS class
+    addCls(table, 'hl-drop');
+
+    // Remove from DOM after animation completes
+    after(600, function () {
+      if (table.parentNode) table.parentNode.removeChild(table);
+    });
+
+    after(data.duration_ms || 2000, onComplete);
+  }
+
+  /* ── ALTER animation ── */
   function animateAlter(container, data, sql, onComplete) {
     clearHighlights(container);
     var table = findTargetTable(container, sql);
@@ -303,7 +297,7 @@
       DELETE: animateDelete,
       CREATE: animateCreate,
       ALTER : animateAlter,
-      DROP  : animateAlter
+      DROP  : animateDrop
     }[queryType] || animateOther;
 
     fn(container, data || {}, sql || '', cb);

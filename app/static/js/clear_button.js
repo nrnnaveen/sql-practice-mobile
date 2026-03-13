@@ -33,48 +33,25 @@
     }
 
     function clearAll() {
-      // 1. Clear Monaco editor text
+      // 1. Clear Monaco editor text ONLY
       if (editor && typeof editor.setValue === 'function') {
         editor.setValue('');
       }
 
-      // 2. Clear results panel
-      var resultsPanel = document.getElementById(resultsPanelId);
-      if (resultsPanel) resultsPanel.innerHTML = '';
-
-      // 3. Clear output / result area (practice mode uses 'resultArea')
-      var resultArea = document.getElementById('resultArea');
-      if (resultArea) resultArea.innerHTML = '';
-
-      // 4. Hide congrats card if present
-      var congratsCard = document.getElementById('congratsCard');
-      if (congratsCard) congratsCard.style.display = 'none';
-
-      // 5. Stop any GSAP animations if available
-      if (typeof window.gsap !== 'undefined' && window.gsap.killTweensOf) {
-        window.gsap.killTweensOf('*');
-      }
-
-      // 6. Clear database visualization highlights
+      // 2. Clear database visualization highlights (visual state only, not content)
       document.querySelectorAll('.hl-select,.hl-insert,.hl-update,.hl-delete,.hl-create,.hl-alter').forEach(function (el) {
         el.classList.remove('hl-select','hl-insert','hl-update','hl-delete','hl-create','hl-alter');
       });
 
-      // 7. Clear query history display
-      var historyList = document.getElementById(historyListId);
-      if (historyList) {
-        historyList.innerHTML = historyEmptyHtml;
-      }
-
-      // 8. Show toast feedback
+      // 3. Show toast feedback
       doToast('✅ Editor cleared!', 'success');
 
-      // 9. Focus back to editor
+      // 4. Focus back to editor
       if (editor && typeof editor.focus === 'function') {
         editor.focus();
       }
 
-      // 10. Call optional callback
+      // 5. Call optional callback
       if (typeof opts.onClear === 'function') {
         opts.onClear();
       }

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/static/css/animations.css">
 <link rel="stylesheet" href="/static/css/database_visualization.css">
 <link rel="stylesheet" href="/static/css/practice_mode.css">
+<link rel="stylesheet" href="/static/css/mobile-responsive.css">
 </head>
 <body>
 <div class="container">
@@ -108,6 +109,18 @@
 
     <!-- LEFT: Editor + Output -->
     <div class="editor-main">
+
+      <!-- DATABASE VISUALIZATION -->
+      <div class="viz-section" id="workbench-viz-section">
+        <div class="viz-section-label">&#x1F4CA; Database Visualization</div>
+        <div class="db-viz-container dbviz-wrapper" id="workbench-viz-container">
+          <span class="dbviz-empty">No tables yet. Create a table to see it here.</span>
+        </div>
+        <div class="anim-status-bar" id="workbench-anim-status">
+          <div class="anim-status-dot" id="workbench-anim-dot"></div>
+          <span class="anim-status-text" id="workbench-anim-text">Running…</span>
+        </div>
+      </div>
 
       <!-- SQL EDITOR -->
       <div class="card">
@@ -221,18 +234,6 @@
       </div>
       {% endif %}
 
-      <!-- DATABASE VISUALIZATION -->
-      <div class="viz-section" id="workbench-viz-section">
-        <div class="viz-section-label">&#x1F4CA; Database Visualization</div>
-        <div class="db-viz-container dbviz-wrapper" id="workbench-viz-container">
-          <span class="dbviz-empty">Loading schema…</span>
-        </div>
-        <div class="anim-status-bar" id="workbench-anim-status">
-          <div class="anim-status-dot" id="workbench-anim-dot"></div>
-          <span class="anim-status-text" id="workbench-anim-text">Running…</span>
-        </div>
-      </div>
-
     </div><!-- /editor-main -->
 
     <!-- RIGHT: Query History -->
@@ -326,17 +327,58 @@ window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
   var vizContainer  = document.getElementById('workbench-viz-container');
   var animStatusBar = document.getElementById('workbench-anim-status');
 
-  // ── 1. Render initial schema ─────────────────────────────────────────────
+  // Table manager tracks the currently-visible tables (max 5, rotation)
+  var tableManager = null;
+
+  // ── 1. Initialise with empty visualization (workbench starts empty) ──────
   function initViz() {
     if (!vizContainer || !window.VisualizerEngine) return;
-    var dbType = window.EDITOR_DB_TYPE || 'mysql';
-    var tables = dbType === 'postgres'
-      ? VisualizerEngine.DEFAULT_POSTGRES_TABLES
-      : VisualizerEngine.DEFAULT_MYSQL_TABLES;
-    VisualizerEngine.renderSchema(vizContainer, tables);
+    tableManager = VisualizerEngine.createTableManager(vizContainer);
   }
 
-  // ── 2. Play animation for the last submitted query (after page reload) ──
+  // ── 2. Extract table name from SQL (CREATE TABLE / DROP TABLE) ───────────
+  function extractTableName(sql) {
+    var m = sql.match(/(?:CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?)`?(\w+)`?/i);
+    return m ? m[1] : null;
+  }
+
+  // ── 3. Parse columns from CREATE TABLE SQL ───────────────────────────────
+  function parseCreateColumns(sql) {
+    var cols = [];
+    var bodyMatch = sql.match(/\(([^)]+)\)/s);
+    if (!bodyMatch) return cols;
+    var lines = bodyMatch[1].split(',');
+    lines.forEach(function (line) {
+      line = line.trim();
+      // Skip constraints
+      if (/^(PRIMARY|FOREIGN|UNIQUE|INDEX|KEY|CONSTRAINT)/i.test(line)) return;
+      var parts = line.split(/\s+/);
+      if (parts.length < 2) return;
+      var colName = parts[0].replace(/`/g, '');
+      var colType = parts[1].toUpperCase();
+      var isPK = /PRIMARY\s+KEY/i.test(line);
+      cols.push({ name: colName, type: colType, pk: isPK });
+    });
+    return cols;
+  }
+
+  // ── 4. Handle CREATE TABLE result ────────────────────────────────────────
+  function handleCreate(sql) {
+    if (!tableManager) return;
+    var name = extractTableName(sql);
+    if (!name) return;
+    var cols = parseCreateColumns(sql);
+    tableManager.addTable({ name: name, columns: cols, row_count: 0 }, true);
+  }
+
+  // ── 5. Handle DROP TABLE result ──────────────────────────────────────────
+  function handleDrop(sql) {
+    if (!tableManager) return;
+    var name = extractTableName(sql);
+    if (name) tableManager.removeTable(name, true);
+  }
+
+  // ── 6. Play animation for the last submitted query (after page reload) ───
   function replayLastAnimation() {
     if (!vizContainer || !window.VisualizerEngine || !window.SQLAnimations) return;
     var hasResults = document.getElementById('output-section');
@@ -348,13 +390,16 @@ window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
     var queryType = window.QueryParser
       ? window.QueryParser.parseQueryType(lastQuery)
       : 'OTHER';
+    // Handle table creation/deletion on reload
+    if (queryType === 'CREATE') handleCreate(lastQuery);
+    else if (queryType === 'DROP') handleDrop(lastQuery);
     var animData = DEFAULT_ANIM_DATA;
     setTimeout(function () {
       VisualizerEngine.run(queryType, lastQuery, animData, vizContainer, animStatusBar);
     }, 400);
   }
 
-  // ── 3. Store query before form submit ───────────────────────────────────
+  // ── 7. Store query before form submit ────────────────────────────────────
   function wireFormCapture() {
     var form = document.getElementById('query-form');
     if (!form) return;
@@ -366,8 +411,7 @@ window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
     }, true);
   }
 
-  // Initialise after Monaco is ready (Monaco calls require([...], callback))
-  // We hook at DOMContentLoaded / after-Monaco-init via a short poll
+  // Initialise after Monaco is ready
   function waitForDeps(fn, maxMs) {
     var start = Date.now();
     (function poll() {
@@ -376,7 +420,6 @@ window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
       } else if (Date.now() - start < maxMs) {
         setTimeout(poll, 100);
       } else {
-        // eslint-disable-next-line no-console
         if (typeof console !== 'undefined') console.warn('SQL Workbench: visualizer dependencies not loaded within timeout.');
       }
     })();
