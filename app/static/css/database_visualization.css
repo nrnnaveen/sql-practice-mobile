@@ -176,7 +176,44 @@
   animation: rowDeleteFade 1.5s ease forwards;
 }
 
-/* ── Responsive ── */
+/* ── Table color coding by name ── */
+.dbviz-table[data-table-name="employees"] .dbviz-table-head {
+  background: rgba(59, 130, 246, 0.15);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+.dbviz-table[data-table-name="orders"] .dbviz-table-head {
+  background: rgba(245, 158, 11, 0.15);
+  border-bottom: 2px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+.dbviz-table[data-table-name="products"] .dbviz-table-head {
+  background: rgba(34, 197, 94, 0.15);
+  border-bottom: 2px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+.dbviz-table[data-table-color="user"] .dbviz-table-head {
+  background: rgba(168, 85, 247, 0.15);
+  border-bottom: 2px solid rgba(168, 85, 247, 0.4);
+  color: #c4b5fd;
+}
+
+/* ── DROP animation ── */
+.dbviz-table.hl-drop {
+  border-color: #F44336;
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.35);
+  animation: slideOutLeft 0.5s ease-in forwards;
+}
+
+/* ── Entering table (CREATE) ── */
+.dbviz-table.entering {
+  animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ── Leaving table (table rotation) ── */
+.dbviz-table.leaving {
+  animation: rotateOut 0.5s ease-in forwards;
+}
 @media (max-width: 480px) {
   .dbviz-table {
     min-width: 110px;

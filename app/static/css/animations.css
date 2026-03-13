@@ -66,6 +66,24 @@
   to   { transform: translateX(0);     opacity: 1; }
 }
 
+/* ── Slide in from right (CREATE TABLE card) ── */
+@keyframes slideInRight {
+  from { transform: translateX(60px);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Slide out to left (DROP TABLE card) ── */
+@keyframes slideOutLeft {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-80px); opacity: 0; }
+}
+
+/* ── Rotate out (oldest table leaving on 6th creation) ── */
+@keyframes rotateOut {
+  from { transform: translateX(0) scale(1); opacity: 1; }
+  to   { transform: translateX(-60px) scale(0.85); opacity: 0; }
+}
+
 /* ── Utility animation classes ── */
 .anim-fade-in  { animation: fadeIn  0.4s ease forwards; }
 .anim-fade-out { animation: fadeOut 0.4s ease forwards; }
@@ -77,6 +95,9 @@
 .anim-cell-flash   { animation: cellFlash 0.6s ease forwards; }
 .anim-row-delete   { animation: rowDeleteFade 1.5s ease forwards; }
 .anim-slide-in-left { animation: slideInLeft 0.4s ease forwards; }
+.anim-slide-in-right { animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.anim-slide-out-left { animation: slideOutLeft 0.5s ease-in forwards; }
+.anim-rotate-out     { animation: rotateOut   0.5s ease-in forwards; }
 
 /* ── Stagger delays for column slide ── */
 .anim-stagger-1 { animation-delay: 0.1s; }

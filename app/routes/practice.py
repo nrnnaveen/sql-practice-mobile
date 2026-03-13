@@ -28,6 +28,7 @@ from app.services.progress_service import (
 from app.services.query_parser_service import parse_query_type
 from app.services.visualizer_service import get_animation_data
 from app.utils.db_init import DB_PATH
+from app.utils.practice_validator import validate_practice_answer
 
 practice_bp = Blueprint("practice", __name__)
 logger = logging.getLogger(__name__)
@@ -293,13 +294,24 @@ def practice_run(db_type, difficulty, qid):
                   raw_result.get("error") if has_error else None)
 
     if not has_error:
-        # Mark question complete and advance progress
-        progress = mark_question_complete(user_id, db_type, difficulty, qid, len(questions))
-        raw_result["execution_time"] = elapsed
-        raw_result["congratulations"] = True
-        raw_result["next_question"] = progress["current_question"]
-        raw_result["completed_ids"] = progress["completed_ids"]
-        raw_result["all_complete"] = len(progress["completed_ids"]) >= len(questions)
+        # Validate the answer against the expected solution
+        validation = validate_practice_answer(
+            raw_result, user_query=query, question=question, sandbox_db=sandbox_db,
+            run_query_fn=_run_sandbox_query
+        )
+        is_correct = validation["is_correct"]
+        raw_result["feedback"] = validation["feedback"]
+
+        if is_correct:
+            # Mark question complete and advance progress
+            progress = mark_question_complete(user_id, db_type, difficulty, qid, len(questions))
+            raw_result["execution_time"] = elapsed
+            raw_result["congratulations"] = True
+            raw_result["next_question"] = progress["current_question"]
+            raw_result["completed_ids"] = progress["completed_ids"]
+            raw_result["all_complete"] = len(progress["completed_ids"]) >= len(questions)
+        else:
+            raw_result["congratulations"] = False
 
         # Serialize rows to plain lists (tuples not JSON serialisable)
         if "rows" in raw_result:
