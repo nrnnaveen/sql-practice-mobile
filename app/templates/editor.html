@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/style.css">
 <link rel="stylesheet" href="/static/css/animations.css">
 <link rel="stylesheet" href="/static/css/database_visualization.css">
+<link rel="stylesheet" href="/static/css/practice_mode.css">
 </head>
 <body>
 <div class="container">
@@ -220,6 +221,18 @@
       </div>
       {% endif %}
 
+      <!-- DATABASE VISUALIZATION -->
+      <div class="viz-section" id="workbench-viz-section">
+        <div class="viz-section-label">&#x1F4CA; Database Visualization</div>
+        <div class="db-viz-container dbviz-wrapper" id="workbench-viz-container">
+          <span class="dbviz-empty">Loading schema…</span>
+        </div>
+        <div class="anim-status-bar" id="workbench-anim-status">
+          <div class="anim-status-dot" id="workbench-anim-dot"></div>
+          <span class="anim-status-text" id="workbench-anim-text">Running…</span>
+        </div>
+      </div>
+
     </div><!-- /editor-main -->
 
     <!-- RIGHT: Query History -->
@@ -302,6 +315,79 @@ require(["vs/editor/editor.main"], function () {
 
 // Pass current db_type to the templates loader so it fetches the right set
 window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
+</script>
+
+<!-- Workbench visualizer + animation initialisation -->
+<script>
+(function () {
+  'use strict';
+  var LAST_QUERY_KEY = 'sqlp_workbench_last_query';
+  var DEFAULT_ANIM_DATA = { duration_ms: 3000, color: '#607D8B', description: 'Query executed' };
+  var vizContainer  = document.getElementById('workbench-viz-container');
+  var animStatusBar = document.getElementById('workbench-anim-status');
+
+  // ── 1. Render initial schema ─────────────────────────────────────────────
+  function initViz() {
+    if (!vizContainer || !window.VisualizerEngine) return;
+    var dbType = window.EDITOR_DB_TYPE || 'mysql';
+    var tables = dbType === 'postgres'
+      ? VisualizerEngine.DEFAULT_POSTGRES_TABLES
+      : VisualizerEngine.DEFAULT_MYSQL_TABLES;
+    VisualizerEngine.renderSchema(vizContainer, tables);
+  }
+
+  // ── 2. Play animation for the last submitted query (after page reload) ──
+  function replayLastAnimation() {
+    if (!vizContainer || !window.VisualizerEngine || !window.SQLAnimations) return;
+    var hasResults = document.getElementById('output-section');
+    if (!hasResults) return;
+    var lastQuery = '';
+    try { lastQuery = localStorage.getItem(LAST_QUERY_KEY) || ''; } catch (e) { /* ignore */ }
+    if (!lastQuery) return;
+    try { localStorage.removeItem(LAST_QUERY_KEY); } catch (e) { /* ignore */ }
+    var queryType = window.QueryParser
+      ? window.QueryParser.parseQueryType(lastQuery)
+      : 'OTHER';
+    var animData = DEFAULT_ANIM_DATA;
+    setTimeout(function () {
+      VisualizerEngine.run(queryType, lastQuery, animData, vizContainer, animStatusBar);
+    }, 400);
+  }
+
+  // ── 3. Store query before form submit ───────────────────────────────────
+  function wireFormCapture() {
+    var form = document.getElementById('query-form');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      var query = window.editor ? window.editor.getValue().trim() : '';
+      if (query) {
+        try { localStorage.setItem(LAST_QUERY_KEY, query); } catch (e) { /* ignore */ }
+      }
+    }, true);
+  }
+
+  // Initialise after Monaco is ready (Monaco calls require([...], callback))
+  // We hook at DOMContentLoaded / after-Monaco-init via a short poll
+  function waitForDeps(fn, maxMs) {
+    var start = Date.now();
+    (function poll() {
+      if (window.VisualizerEngine && window.SQLAnimations && window.QueryParser) {
+        fn();
+      } else if (Date.now() - start < maxMs) {
+        setTimeout(poll, 100);
+      } else {
+        // eslint-disable-next-line no-console
+        if (typeof console !== 'undefined') console.warn('SQL Workbench: visualizer dependencies not loaded within timeout.');
+      }
+    })();
+  }
+
+  wireFormCapture();
+  waitForDeps(function () {
+    initViz();
+    replayLastAnimation();
+  }, 5000);
+}());
 </script>
 
 </body>

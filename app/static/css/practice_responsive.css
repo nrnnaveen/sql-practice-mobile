@@ -1,0 +1,140 @@
+/* ============================================================
+   practice_responsive.css  –  Mobile-first responsive layout
+   for the Practice Question page.
+   ============================================================ */
+
+/* ── Reset page padding on mobile ── */
+@media (max-width: 600px) {
+  .dash-main {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* ── History panel: sticky on tablet+ ── */
+@media (min-width: 768px) {
+  .history-panel {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+/* ── Monaco editor box: responsive height ── */
+.monaco-box {
+  height: 140px;
+}
+
+@media (min-width: 600px) {
+  .monaco-box {
+    height: 180px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .monaco-box {
+    height: 240px;
+  }
+}
+
+/* ── Run bar: wrap gracefully on small screens ── */
+.run-bar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ── Nav bar: wraps gracefully on small screens ── */
+.nav-bar {
+  gap: 0.4rem;
+}
+
+.nav-btns {
+  flex-wrap: wrap;
+}
+
+/* ── Question card text: larger on desktop ── */
+@media (min-width: 768px) {
+  .question-text {
+    font-size: 1.05rem;
+  }
+}
+
+/* ── DB visualization container: scrollable on mobile ── */
+@media (max-width: 480px) {
+  .db-viz-container {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* ── Result table: horizontally scrollable ── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Practice header: prevent overflow on tiny screens ── */
+.practice-header-left {
+  overflow: hidden;
+}
+
+.db-badge-sm,
+.diff-badge {
+  flex-shrink: 0;
+}
+
+/* ── Touch-friendly minimum tap targets ── */
+.btn-nav,
+.btn-run,
+.btn-secondary,
+.hint-btn,
+.sample-btn {
+  min-height: 40px;
+}
+
+@media (max-width: 480px) {
+  .btn-nav,
+  .btn-run,
+  .btn-secondary {
+    min-height: 44px;
+    font-size: 0.9rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .shortcut-hint {
+    display: none;
+  }
+}
+
+/* ── Congrats card: readable on mobile ── */
+@media (max-width: 600px) {
+  .congrats-card {
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .btn-next {
+    display: inline-block;
+    min-height: 48px;
+    line-height: 1.4;
+    padding: 0.75rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* ── History item: prevent text overflow ── */
+.history-query {
+  max-width: 100%;
+}
+
+/* ── Reduce complex animation effects on mobile ── */
+@media (max-width: 600px) {
+  .flying-row {
+    display: none;
+  }
+}
