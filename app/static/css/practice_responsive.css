@@ -148,10 +148,9 @@
   }
 }
 
-/* ── Prevent horizontal overflow on the entire practice page ── */
-.dash-card {
-  overflow-x: hidden;
-}
+/* ── Prevent horizontal overflow on the entire practice page ──
+   Note: overflow-x must remain visible so the viz container can
+   scroll horizontally; page-level overflow is controlled by body. ── */
 
 /* ── Ensure question card text wraps on narrow screens ── */
 @media (max-width: 640px) {

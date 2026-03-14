@@ -145,8 +145,9 @@
 }
 
 /* ── Animation status banner ── */
+/* Visibility (opacity) is controlled by mobile-responsive.css using the .visible class */
 .anim-status-bar {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.75rem;
@@ -155,10 +156,6 @@
   font-size: 0.8rem;
   color: var(--text-muted, #aaa);
   margin-top: 0.5rem;
-}
-
-.anim-status-bar.visible {
-  display: flex;
 }
 
 .anim-status-dot {
