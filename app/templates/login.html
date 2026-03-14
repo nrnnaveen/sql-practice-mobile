@@ -50,19 +50,60 @@
     <script src="{{ url_for('static', filename='sql_animation.js') }}"></script>
     <script>
         function googleLogin() {
+            console.log('🔍 [Google Login] Starting authentication flow');
+            console.log('📱 [Google Login] Cordova detected:', typeof window.cordova !== 'undefined');
+            console.log('👤 [Google Login] User Agent:', navigator.userAgent);
+
+            var loginUrl = window.location.origin + "/login/google";
+
             try {
-                var loginUrl = window.location.origin + "/login/google";
                 if (typeof window.cordova !== 'undefined') {
-                    console.log('📱 Cordova detected - opening in system browser');
-                    window.open(loginUrl, "_system");
+                    console.log('✅ [Google Login] Cordova environment – opening system browser');
+                    showToast('Opening Google login in system browser…', 'info');
+
+                    var ref = window.open(
+                        loginUrl,
+                        "_system",
+                        "location=yes,toolbar=yes,enableViewportScale=yes"
+                    );
+
+                    if (!ref) {
+                        console.error('❌ [Google Login] Failed to open system browser, falling back');
+                        showToast('Could not open browser. Retrying…', 'error');
+                        window.location.href = loginUrl;
+                    }
                 } else {
-                    console.log('🌐 Normal browser - using standard navigation');
+                    console.log('🌐 [Google Login] Browser environment – standard navigation');
                     window.location.href = loginUrl;
                 }
             } catch (error) {
-                console.error('Google login error:', error);
-                window.location.href = "/login/google";
+                console.error('❌ [Google Login] Error:', error);
+                showToast('Authentication error. Please try again.', 'error');
+                window.location.href = loginUrl;
             }
+        }
+
+        function showToast(message, type) {
+            type = type || 'info';
+            var toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = [
+                'position:fixed',
+                'bottom:20px',
+                'right:20px',
+                'padding:12px 20px',
+                'border-radius:6px',
+                'font-size:14px',
+                'z-index:10000',
+                'color:#fff',
+                'transition:opacity 0.3s ease'
+            ].join(';');
+
+            var colors = { success: '#4CAF50', error: '#f44336', info: '#2196F3' };
+            toast.style.background = colors[type] || colors.info;
+
+            document.body.appendChild(toast);
+            setTimeout(function () { toast.parentNode && toast.parentNode.removeChild(toast); }, 3000);
         }
     </script>
 </body>

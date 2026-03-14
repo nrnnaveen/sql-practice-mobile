@@ -59,12 +59,35 @@ def login():
 
 @auth_bp.route("/login/google")
 def login_google():
+    """Initiate Google OAuth flow."""
+    logger.info(
+        "Google OAuth initiated – User-Agent: %s | Origin: %s | Host: %s",
+        request.headers.get("User-Agent"),
+        request.headers.get("Origin"),
+        request.host,
+    )
     redirect_uri = url_for("auth.google_callback", _external=True)
+    logger.info("Google OAuth redirect URI: %s", redirect_uri)
     return oauth.google.authorize_redirect(redirect_uri)
 
 
 @auth_bp.route("/login/google/callback")
 def google_callback():
+    """Handle Google OAuth callback."""
+    error = request.args.get("error")
+    if error:
+        logger.warning("Google OAuth error returned: %s", error)
+        if error == "access_denied":
+            error_msg = "You denied access to Google login."
+        elif error == "disallowed_useragent":
+            error_msg = (
+                "Your browser or app is not authorised for Google sign-in. "
+                "Please open the app in a standard browser and try again."
+            )
+        else:
+            error_msg = f"Google authentication failed: {error}"
+        return render_template("login.html", error=error_msg)
+
     try:
         token = oauth.google.authorize_access_token()
         userinfo = token.get("userinfo") or {}
@@ -73,19 +96,24 @@ def google_callback():
         picture = userinfo.get("picture", "")
         google_id = userinfo.get("sub", "")
 
+        logger.info("Google OAuth callback – email: %s", email)
+
         if not email:
+            logger.error("Google OAuth callback: no email in userinfo")
             return redirect(url_for("auth.login"))
 
         user_id = get_or_create_google_user(email, name, picture, google_id)
         if user_id is None:
+            logger.error("Google OAuth callback: failed to create/retrieve user")
             return redirect(url_for("auth.login"))
 
         session.permanent = True
         session["user_id"] = user_id
         session["login_type"] = "google"
+        logger.info("User %s logged in via Google OAuth", user_id)
         return redirect(url_for("dashboard.dashboard"))
     except Exception as exc:
-        logger.error("Google OAuth callback error: %s", exc)
+        logger.error("Google OAuth callback error: %s", exc, exc_info=True)
         return redirect(url_for("auth.login"))
 
 

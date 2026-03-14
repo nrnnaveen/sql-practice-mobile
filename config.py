@@ -28,6 +28,54 @@ if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         "Google Sign-In will be disabled."
     )
 
+# Explicit redirect URI override (optional).  When set, this value is used
+# instead of the dynamically generated url_for() result.  Useful when the
+# app sits behind a reverse proxy that changes the visible scheme/host.
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get("GOOGLE_OAUTH_REDIRECT_URI", "")
+
+# OAuth scopes requested from Google.
+GOOGLE_OAUTH_SCOPES = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+
+# Authorized redirect URIs – register all of these in the Google Cloud Console.
+AUTHORIZED_REDIRECT_URIS = [
+    uri
+    for uri in [
+        GOOGLE_OAUTH_REDIRECT_URI,
+        os.environ.get("APP_URL", ""),
+        "http://localhost:5000/login/google/callback",
+        "http://127.0.0.1:5000/login/google/callback",
+    ]
+    if uri
+]
+
+# Authorized JavaScript origins – register these in the Google Cloud Console.
+AUTHORIZED_JAVASCRIPT_ORIGINS = [
+    origin
+    for origin in [
+        os.environ.get("APP_URL", ""),
+        "http://localhost:5000",
+        "http://localhost:8100",
+    ]
+    if origin
+]
+
+# Trusted origins for CORS / origin validation.
+TRUSTED_ORIGINS = list(
+    {
+        origin
+        for origin in [
+            os.environ.get("APP_URL", ""),
+            "http://localhost:5000",
+            "http://localhost:8100",
+        ]
+        if origin
+    }
+)
+
 # ── MySQL ────────────────────────────────────────────────────────────────────
 # On Railway, set MYSQL_HOST / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DATABASE as
 # environment variables. When those are absent the app falls back to localhost so
