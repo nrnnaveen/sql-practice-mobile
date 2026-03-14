@@ -19,13 +19,7 @@
 .viz-section {
   position: relative;
   z-index: 1;
-  background: var(--bg-card, #1e1e2e);
-  border-radius: 10px;
-  padding: 0.75rem;
-  border: 1px solid var(--border, #333);
   margin-bottom: 0.75rem;
-  /* Extra bottom padding so box-shadow glows on table cards are visible */
-  padding-bottom: 1.25rem;
 }
 
 .db-viz-container.dbviz-wrapper {
@@ -161,7 +155,7 @@
   transition: opacity 0.3s;
 }
 
-.anim-status-bar.active {
+.anim-status-bar.visible {
   opacity: 1;
 }
 
