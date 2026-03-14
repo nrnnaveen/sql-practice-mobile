@@ -51,8 +51,15 @@
   animation: scalePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 .dbviz-table.hl-alter {
-  border-color: #9C27B0;
-  box-shadow: 0 0 20px rgba(156, 39, 176, 0.25);
+  border-color: #00BCD4;
+  box-shadow: 0 0 20px rgba(0, 188, 212, 0.35);
+}
+
+/* ── TRUNCATE highlight ── */
+.dbviz-table.hl-truncate {
+  border-color: #FF5722;
+  box-shadow: 0 0 20px rgba(255, 87, 34, 0.4);
+  animation: truncateFlash 2.5s ease forwards;
 }
 
 /* ── Table header ── */

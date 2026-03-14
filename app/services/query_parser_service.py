@@ -38,6 +38,7 @@ def parse_query_type(sql: str) -> str:
         "CREATE": CREATE,
         "ALTER":  ALTER,
         "DROP":   DROP,
+        "TRUNCATE": "TRUNCATE",
         "SHOW":   OTHER,
         "DESCRIBE": OTHER,
         "DESC":   OTHER,

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/style.css">
 <link rel="stylesheet" href="/static/css/animations.css">
 <link rel="stylesheet" href="/static/css/database_visualization.css">
+<link rel="stylesheet" href="/static/css/workbench.css">
 <link rel="stylesheet" href="/static/css/practice_mode.css">
 <link rel="stylesheet" href="/static/css/mobile-responsive.css">
 </head>
@@ -116,6 +117,7 @@
         <div class="db-viz-container dbviz-wrapper" id="workbench-viz-container">
           <span class="dbviz-empty">No tables yet. Create a table to see it here.</span>
         </div>
+        <div class="dbviz-rotation-indicator" id="workbench-rotation-indicator"></div>
         <div class="anim-status-bar" id="workbench-anim-status">
           <div class="anim-status-dot" id="workbench-anim-dot"></div>
           <span class="anim-status-text" id="workbench-anim-text">Running…</span>
@@ -155,7 +157,6 @@
 
           <div class="run-bar">
             <button type="submit" id="run-btn" class="btn btn-primary">
-              <span id="run-spinner" class="spinner hidden"></span>
               &#9654; Run Query
             </button>
             <button type="button" id="clear-button" class="btn btn-danger clear-btn" title="Clear editor and results (Ctrl+Alt+C)">
@@ -166,7 +167,9 @@
         </form>
       </div>
 
-      <!-- QUERY RESULT -->
+      <!-- QUERY RESULT (AJAX-rendered; initial render kept if present) -->
+      <div id="ajax-output-section"></div>
+
       {% if result %}
       <div class="card" id="output-section">
         {% if result.error %}
@@ -283,6 +286,11 @@
 <script src="/static/js/animations.js"></script>
 <script src="/static/js/visualizer_engine.js"></script>
 <script src="/static/js/clear_button.js"></script>
+<!-- Workbench state management / execution -->
+<script src="/static/js/workbench-state.js"></script>
+<script src="/static/js/workbench-visualizer.js"></script>
+<script src="/static/js/workbench-executor.js"></script>
+<script src="/static/js/animation-engine.js"></script>
 <script>
 // Bootstrap Monaco and wire up the page
 require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
@@ -304,10 +312,10 @@ require(["vs/editor/editor.main"], function () {
     function () { document.getElementById("query-form").requestSubmit(); }
   );
 
-  // Initialise Clear button (clears editor + output-section)
+  // Initialise Clear button (clears editor + ajax output section)
   if (window.ClearButton) {
     window.ClearButton.initClearButton(window.editor, {
-      resultsPanelId: 'output-section',
+      resultsPanelId: 'ajax-output-section',
       historyListId: 'history-items',
       toastFn: window.showToast || null,
     });
@@ -318,118 +326,207 @@ require(["vs/editor/editor.main"], function () {
 window.EDITOR_DB_TYPE = {{ (db_type_filter or selected_db) | tojson }};
 </script>
 
-<!-- Workbench visualizer + animation initialisation -->
+<!-- Workbench: AJAX execution, persistent visualization, animations -->
 <script>
 (function () {
   'use strict';
-  var LAST_QUERY_KEY = 'sqlp_workbench_last_query';
-  var DEFAULT_ANIM_DATA = { duration_ms: 3000, color: '#607D8B', description: 'Query executed' };
+
+  // ── Config ──────────────────────────────────────────────────────────────
+  var DB_TYPE     = {{ (sandbox_db.db_type if sandbox_db else (db_type_filter or selected_db)) | tojson }};
+  var EXECUTE_URL = '/editor/execute-query';
+  var SCHEMA_URL  = '/editor/get-schema';
+
+  // ── Element references ────────────────────────────────────────────────────
   var vizContainer  = document.getElementById('workbench-viz-container');
   var animStatusBar = document.getElementById('workbench-anim-status');
+  var rotIndicator  = document.getElementById('workbench-rotation-indicator');
+  var ajaxOutput    = document.getElementById('ajax-output-section');
+  var historyItems  = document.getElementById('history-items');
+  var runBtn        = document.getElementById('run-btn');
+  var queryForm     = document.getElementById('query-form');
 
-  // Table manager tracks the currently-visible tables (max 5, rotation)
-  var tableManager = null;
+  // ── State / visualizer / animation engine instances ──────────────────────
+  var wbState = null;
+  var wbViz   = null;
+  var animEng = null;
 
-  // ── 1. Initialise with empty visualization (workbench starts empty) ──────
-  function initViz() {
-    if (!vizContainer || !window.VisualizerEngine) return;
-    tableManager = VisualizerEngine.createTableManager(vizContainer);
+  // ── Result rendering ─────────────────────────────────────────────────────
+
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ── 2. Extract table name from SQL (CREATE TABLE / DROP TABLE) ───────────
-  function extractTableName(sql) {
-    var m = sql.match(/(?:CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?|DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?)`?(\w+)`?/i);
-    return m ? m[1] : null;
+  function renderResult(data, query) {
+    if (!ajaxOutput) return;
+    var res      = data.result   || {};
+    var qtype    = (data.query_type || 'OTHER').toLowerCase();
+    var elapsed  = data.execution_time !== undefined ? data.execution_time.toFixed(3) : null;
+
+    var html = '<div class="card wb-result-panel">';
+    html += '<div class="wb-result-meta">';
+    html += '<span class="wb-result-badge ' + _esc(qtype) + '">' + _esc(qtype.toUpperCase()) + '</span>';
+    if (elapsed) html += '<span class="wb-exec-time">' + _esc(elapsed) + 's</span>';
+    html += '</div>';
+
+    if (res.error) {
+      html += '<div class="wb-message error">&#10006; ' + _esc(res.error) + '</div>';
+    } else if (res.columns && res.rows) {
+      var rowCount = res.rows.length;
+      html += '<div class="wb-result-meta" style="margin-top:0">';
+      html += '<span>' + rowCount + ' row' + (rowCount === 1 ? '' : 's') + ' returned</span>';
+      html += '</div>';
+      html += '<div class="wb-result-table-wrap"><table class="wb-result-table"><thead><tr>';
+      res.columns.forEach(function (col) {
+        html += '<th>' + _esc(col) + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+      res.rows.forEach(function (row) {
+        html += '<tr>';
+        row.forEach(function (cell) {
+          html += '<td>' + _esc(cell) + '</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    } else if (res.message) {
+      html += '<div class="wb-message success">&#10003; ' + _esc(res.message) + '</div>';
+    }
+
+    html += '</div>';
+    ajaxOutput.innerHTML = html;
+
+    // Hide the old Jinja-rendered result panel once AJAX takes over
+    var oldOutput = document.getElementById('output-section');
+    if (oldOutput) oldOutput.style.display = 'none';
   }
 
-  // ── 3. Parse columns from CREATE TABLE SQL ───────────────────────────────
-  function parseCreateColumns(sql) {
-    var cols = [];
-    var bodyMatch = sql.match(/\(([^)]+)\)/s);
-    if (!bodyMatch) return cols;
-    var lines = bodyMatch[1].split(',');
-    lines.forEach(function (line) {
-      line = line.trim();
-      // Skip constraints
-      if (/^(PRIMARY|FOREIGN|UNIQUE|INDEX|KEY|CONSTRAINT)/i.test(line)) return;
-      var parts = line.split(/\s+/);
-      if (parts.length < 2) return;
-      var colName = parts[0].replace(/`/g, '');
-      var colType = parts[1].toUpperCase();
-      var isPK = /PRIMARY\s+KEY/i.test(line);
-      cols.push({ name: colName, type: colType, pk: isPK });
+  function renderError(msg) {
+    if (!ajaxOutput) return;
+    ajaxOutput.innerHTML =
+      '<div class="card wb-result-panel">' +
+      '<div class="wb-message error">&#10006; ' + _esc(msg) + '</div>' +
+      '</div>';
+    var oldOutput = document.getElementById('output-section');
+    if (oldOutput) oldOutput.style.display = 'none';
+  }
+
+  // ── History update (prepend new item) ────────────────────────────────────
+
+  var BADGE_COLORS = {
+    select:   '#2196F3', insert:   '#4CAF50', update:   '#FF9800',
+    delete:   '#F44336', create:   '#9C27B0', drop:     '#F44336',
+    alter:    '#00BCD4', truncate: '#FF5722', other:    '#607D8B',
+  };
+
+  function prependHistory(query, qtype) {
+    if (!historyItems) return;
+    var color = BADGE_COLORS[qtype.toLowerCase()] || '#607D8B';
+    var item = document.createElement('div');
+    item.className = 'history-item';
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', function () {
+      if (window.editor) window.editor.setValue(query);
     });
-    return cols;
+    item.innerHTML =
+      '<div class="history-item-meta">' +
+      '<span class="history-db history-db-' + _esc(DB_TYPE) + '" style="background:' + _esc(color) + '22;color:' + _esc(color) + '">' +
+        _esc(DB_TYPE) + '</span>' +
+      '</div>' +
+      '<span class="history-query-text">' + _esc(query) + '</span>';
+    // Insert at top
+    var firstChild = historyItems.firstChild;
+    if (firstChild) {
+      historyItems.insertBefore(item, firstChild);
+    } else {
+      historyItems.appendChild(item);
+    }
+    // Remove "no history" placeholder if present
+    var empty = historyItems.querySelector('.history-empty');
+    if (empty) empty.parentNode.removeChild(empty);
   }
 
-  // ── 4. Handle CREATE TABLE result ────────────────────────────────────────
-  function handleCreate(sql) {
-    if (!tableManager) return;
-    var name = extractTableName(sql);
-    if (!name) return;
-    var cols = parseCreateColumns(sql);
-    tableManager.addTable({ name: name, columns: cols, row_count: 0 }, true);
+  // ── Success handler ───────────────────────────────────────────────────────
+
+  function onSuccess(data, query) {
+    renderResult(data, query);
+    prependHistory(query, data.query_type || 'OTHER');
+
+    // Sync visualization from the returned schema snapshot
+    if (wbViz && Array.isArray(data.schema)) {
+      wbViz.syncFromSchema(data.schema);
+    }
+
+    // Play animation
+    if (animEng) {
+      animEng.play(data.query_type || 'OTHER', query, data.animation_data);
+    } else if (window.VisualizerEngine) {
+      VisualizerEngine.run(data.query_type || 'OTHER', query, data.animation_data || {}, vizContainer, animStatusBar);
+    }
+
+    if (window.showToast) showToast('Query executed.', 'success', 2000);
   }
 
-  // ── 5. Handle DROP TABLE result ──────────────────────────────────────────
-  function handleDrop(sql) {
-    if (!tableManager) return;
-    var name = extractTableName(sql);
-    if (name) tableManager.removeTable(name, true);
+  function onError(msg) {
+    renderError(msg);
+    if (window.showToast) showToast('Error: ' + msg, 'error', 3000);
   }
 
-  // ── 6. Play animation for the last submitted query (after page reload) ───
-  function replayLastAnimation() {
-    if (!vizContainer || !window.VisualizerEngine || !window.SQLAnimations) return;
-    var hasResults = document.getElementById('output-section');
-    if (!hasResults) return;
-    var lastQuery = '';
-    try { lastQuery = localStorage.getItem(LAST_QUERY_KEY) || ''; } catch (e) { /* ignore */ }
-    if (!lastQuery) return;
-    try { localStorage.removeItem(LAST_QUERY_KEY); } catch (e) { /* ignore */ }
-    var queryType = window.QueryParser
-      ? window.QueryParser.parseQueryType(lastQuery)
-      : 'OTHER';
-    // Handle table creation/deletion on reload
-    if (queryType === 'CREATE') handleCreate(lastQuery);
-    else if (queryType === 'DROP') handleDrop(lastQuery);
-    var animData = DEFAULT_ANIM_DATA;
-    setTimeout(function () {
-      VisualizerEngine.run(queryType, lastQuery, animData, vizContainer, animStatusBar);
-    }, 400);
+  // ── Initialise (after deps load) ─────────────────────────────────────────
+
+  function init() {
+    if (!window.WorkbenchState || !window.WorkbenchVisualizer || !window.WorkbenchExecutor) {
+      // Deps not yet available; deps loader will retry
+      return false;
+    }
+
+    // 1. State
+    wbState = new WorkbenchState(DB_TYPE);
+
+    // 2. Visualizer: restore from localStorage immediately (instant feedback)
+    wbViz = new WorkbenchVisualizer(vizContainer, wbState, rotIndicator);
+
+    // 3. Animation engine
+    if (window.AnimationEngine) {
+      animEng = new AnimationEngine(vizContainer, animStatusBar);
+    }
+
+    // 4. AJAX executor
+    new WorkbenchExecutor({
+      form:       queryForm,
+      editorFn:   function () { return window.editor ? window.editor.getValue().trim() : ''; },
+      dbType:     DB_TYPE,
+      executeUrl: EXECUTE_URL,
+      runBtn:     runBtn,
+      runBtnOriginalHtml: '&#9654; Run Query',
+      onSuccess:  onSuccess,
+      onError:    onError,
+    });
+
+    // 5. Fetch fresh schema from server to sync with actual DB state
+    fetch(SCHEMA_URL + '?db_type=' + encodeURIComponent(DB_TYPE))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (Array.isArray(data.tables) && data.tables.length > 0) {
+          wbViz.syncFromSchema(data.tables);
+        }
+      })
+      .catch(function () { /* ignore – localStorage state still shown */ });
+
+    return true;
   }
 
-  // ── 7. Store query before form submit ────────────────────────────────────
-  function wireFormCapture() {
-    var form = document.getElementById('query-form');
-    if (!form) return;
-    form.addEventListener('submit', function () {
-      var query = window.editor ? window.editor.getValue().trim() : '';
-      if (query) {
-        try { localStorage.setItem(LAST_QUERY_KEY, query); } catch (e) { /* ignore */ }
-      }
-    }, true);
-  }
-
-  // Initialise after Monaco is ready
+  // Poll until workbench deps are loaded (they load after Monaco)
   function waitForDeps(fn, maxMs) {
     var start = Date.now();
     (function poll() {
-      if (window.VisualizerEngine && window.SQLAnimations && window.QueryParser) {
-        fn();
-      } else if (Date.now() - start < maxMs) {
-        setTimeout(poll, 100);
-      } else {
-        if (typeof console !== 'undefined') console.warn('SQL Workbench: visualizer dependencies not loaded within timeout.');
-      }
+      if (fn()) return;
+      if (Date.now() - start < maxMs) setTimeout(poll, 150);
     })();
   }
 
-  wireFormCapture();
-  waitForDeps(function () {
-    initViz();
-    replayLastAnimation();
-  }, 5000);
+  waitForDeps(init, 8000);
 }());
 </script>
 

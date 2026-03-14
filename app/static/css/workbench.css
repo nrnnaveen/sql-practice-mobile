@@ -1,0 +1,232 @@
+/* ============================================================
+   workbench.css  –  Workbench mode specific styles
+   ============================================================ */
+
+/* ── Status bar (animation indicator) ── */
+.anim-status-bar {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted, #aaa);
+  margin-bottom: 0.5rem;
+  transition: opacity 0.3s;
+}
+
+.anim-status-bar.visible {
+  display: flex;
+}
+
+.anim-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #607D8B;
+  flex-shrink: 0;
+  animation: glowPulse 1s ease infinite;
+}
+
+.anim-status-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Rotation indicator ── */
+.dbviz-rotation-indicator {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+  padding: 0.2rem 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  margin-top: 0.4rem;
+  display: none;
+}
+
+/* ── Result panel (AJAX-rendered) ── */
+.wb-result-panel {
+  margin-top: 0.75rem;
+}
+
+.wb-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted, #aaa);
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wb-result-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.wb-result-badge.select   { background: rgba(33,150,243,0.2);  color: #90caf9; }
+.wb-result-badge.insert   { background: rgba(76,175,80,0.2);   color: #a5d6a7; }
+.wb-result-badge.update   { background: rgba(255,152,0,0.2);   color: #ffcc80; }
+.wb-result-badge.delete   { background: rgba(244,67,54,0.2);   color: #ef9a9a; }
+.wb-result-badge.create   { background: rgba(156,39,176,0.2);  color: #ce93d8; }
+.wb-result-badge.drop     { background: rgba(244,67,54,0.2);   color: #ef9a9a; }
+.wb-result-badge.alter    { background: rgba(0,188,212,0.2);   color: #80deea; }
+.wb-result-badge.truncate { background: rgba(255,87,34,0.2);   color: #ffab91; }
+.wb-result-badge.other    { background: rgba(96,125,139,0.2);  color: #b0bec5; }
+.wb-result-badge.error    { background: rgba(244,67,54,0.2);   color: #ef9a9a; }
+
+.wb-exec-time {
+  font-size: 0.72rem;
+  color: var(--text-muted, #888);
+}
+
+/* ── Result table ── */
+.wb-result-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.wb-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.wb-result-table th {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.08);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255,255,255,0.12);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.wb-result-table td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.wb-result-table tr:last-child td { border-bottom: none; }
+
+.wb-result-table tr:hover td {
+  background: rgba(255,255,255,0.04);
+}
+
+/* ── Messages (success / error) ── */
+.wb-message {
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.wb-message.success {
+  background: rgba(76,175,80,0.12);
+  border: 1px solid rgba(76,175,80,0.3);
+  color: #a5d6a7;
+}
+
+.wb-message.error {
+  background: rgba(244,67,54,0.12);
+  border: 1px solid rgba(244,67,54,0.3);
+  color: #ef9a9a;
+}
+
+/* ── History item (AJAX-appended) ── */
+.wb-history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wb-history-item:last-child { border-bottom: none; }
+
+.wb-history-item:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.wb-history-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.12rem 0.3rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.wb-history-query {
+  flex: 1;
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--text-muted, #ccc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Flying row animation helper ── */
+.flying-row {
+  position: absolute;
+  background: rgba(33,150,243,0.15);
+  border: 1px solid #2196F3;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  color: #90caf9;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* ── Responsive: mobile (≤767px) ── */
+@media (max-width: 767px) {
+  .wb-result-table-wrap {
+    max-height: 220px;
+  }
+
+  .wb-result-table th,
+  .wb-result-table td {
+    padding: 0.28rem 0.4rem;
+    font-size: 0.72rem;
+  }
+
+  .dbviz-rotation-indicator {
+    font-size: 0.68rem;
+  }
+}
+
+/* ── Responsive: tablet (768px–1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .wb-result-table-wrap {
+    max-height: 280px;
+  }
+}
+
+/* ── Responsive: desktop (≥1024px) ── */
+@media (min-width: 1024px) {
+  .wb-result-table-wrap {
+    max-height: 400px;
+  }
+}
