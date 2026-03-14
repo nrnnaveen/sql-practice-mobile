@@ -15,16 +15,17 @@
   order: 5; /* History at bottom on mobile */
 }
 
-/* Visualization sticky on mobile */
+/* Visualization section: NOT sticky on mobile to avoid covering content */
 .viz-section {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: relative;
+  z-index: 1;
   background: var(--bg-card, #1e1e2e);
   border-radius: 10px;
   padding: 0.75rem;
   border: 1px solid var(--border, #333);
   margin-bottom: 0.75rem;
+  /* Extra bottom padding so box-shadow glows on table cards are visible */
+  padding-bottom: 1.25rem;
 }
 
 .db-viz-container.dbviz-wrapper {
@@ -32,7 +33,8 @@
   flex-wrap: nowrap;
   gap: 0.5rem;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
+  overflow-y: visible;
+  padding-bottom: 0.5rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   min-height: 100px;
@@ -74,6 +76,7 @@
   .db-viz-container.dbviz-wrapper {
     flex-wrap: wrap;
     overflow-x: visible;
+    overflow-y: visible;
   }
 
   .dbviz-table {
@@ -82,9 +85,7 @@
   }
 
   .viz-section {
-    position: relative; /* un-sticky on larger screens */
-    top: unset;
-    z-index: unset;
+    padding-bottom: 0.75rem;
   }
 
   /* Practice layout: main column + history sidebar */
@@ -170,3 +171,4 @@
   border-radius: 50%;
   background: var(--accent, #7c3aed);
 }
+

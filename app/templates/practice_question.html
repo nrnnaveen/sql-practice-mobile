@@ -4,14 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Q{{ question_num }}/{{ total_questions }} – {{ diff_info.label }} {{ db_type | upper }} Practice</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/practice_mode.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/database_visualization.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/practice_responsive.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
 <style>
-  /* ── Practice Layout ── */
+  /* ── Practice Layout (base styles — overridden by responsive CSS below) ── */
   .practice-layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-top:1rem;}
   @media(max-width:900px){.practice-layout{grid-template-columns:1fr;}}
   .practice-main{min-width:0;}
@@ -89,6 +83,12 @@
   .sample-answer-box{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:0.75rem;margin-top:0.75rem;font-family:monospace;font-size:0.85rem;color:#93c5fd;display:none;white-space:pre-wrap;}
   .sample-answer-box.show{display:block;}
 </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/practice_mode.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/database_visualization.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/practice_responsive.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile-responsive.css') }}">
 </head>
 <body class="dashboard-bg">
 

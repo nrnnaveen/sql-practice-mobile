@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* ── Reset page padding on mobile ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .dash-main {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -22,19 +22,26 @@
 }
 
 /* ── Monaco editor box: responsive height ── */
+/* Mobile base: 160px (overridden by mobile-responsive.css with !important) */
 .monaco-box {
-  height: 140px;
+  height: 160px;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 480px) {
   .monaco-box {
-    height: 180px;
+    height: 200px;
+  }
+}
+
+@media (min-width: 640px) {
+  .monaco-box {
+    height: 220px;
   }
 }
 
 @media (min-width: 1024px) {
   .monaco-box {
-    height: 240px;
+    height: 280px;
   }
 }
 
@@ -60,13 +67,15 @@
   }
 }
 
-/* ── DB visualization container: scrollable on mobile ── */
-@media (max-width: 480px) {
+/* ── DB visualization container: scrollable horizontally on mobile ── */
+@media (max-width: 640px) {
   .db-viz-container {
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 0.25rem;
+    /* Extra bottom padding so box-shadow glows on table cards are visible */
+    padding-bottom: 1.25rem;
   }
 }
 
@@ -111,7 +120,7 @@
 }
 
 /* ── Congrats card: readable on mobile ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .congrats-card {
     text-align: center;
     padding: 1rem;
@@ -133,8 +142,29 @@
 }
 
 /* ── Reduce complex animation effects on mobile ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .flying-row {
     display: none;
   }
 }
+
+/* ── Prevent horizontal overflow on the entire practice page ── */
+.dash-card {
+  overflow-x: hidden;
+}
+
+/* ── Ensure question card text wraps on narrow screens ── */
+@media (max-width: 640px) {
+  .question-text {
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .question-card,
+  .editor-card,
+  .result-card,
+  .history-panel {
+    padding: 1rem;
+  }
+}
+
