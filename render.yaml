@@ -1,0 +1,10 @@
+# render.yaml
+
+services:
+  - type: web
+    name: sql-practice-mobile
+    env: python
+    buildCommand: 'pip install -r requirements.txt'
+    startCommand: 'gunicorn app:app'
+    plan: free
+    autoDeploy: true
