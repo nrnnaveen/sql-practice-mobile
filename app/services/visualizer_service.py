@@ -3,6 +3,8 @@ from app.services.query_parser_service import (
     SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, OTHER
 )
 
+TRUNCATE = "TRUNCATE"
+
 
 # ---------------------------------------------------------------------------
 # Animation step templates
@@ -59,48 +61,59 @@ _DEFAULT_STEPS = [
     {"delay": 1500, "action": "fade_highlight", "target": "table-box", "style": {"boxShadow": "none"}},
 ]
 
+_TRUNCATE_STEPS = [
+    {"delay": 0,    "action": "flash_table",   "target": "table-box",  "style": {"boxShadow": "0 0 30px #FF5722", "borderColor": "#FF5722"}},
+    {"delay": 500,  "action": "fade_rows",      "target": "table-rows", "style": {"opacity": 0}},
+    {"delay": 1500, "action": "clear_rows",     "target": "table-rows", "style": {}},
+    {"delay": 2000, "action": "fade_highlight", "target": "table-box",  "style": {"boxShadow": "none"}},
+]
+
 _STEPS_MAP = {
-    SELECT: _SELECT_STEPS,
-    INSERT: _INSERT_STEPS,
-    UPDATE: _UPDATE_STEPS,
-    DELETE: _DELETE_STEPS,
-    CREATE: _CREATE_STEPS,
-    ALTER:  _ALTER_STEPS,
-    DROP:   _ALTER_STEPS,   # reuse ALTER animation
-    OTHER:  _DEFAULT_STEPS,
+    SELECT:   _SELECT_STEPS,
+    INSERT:   _INSERT_STEPS,
+    UPDATE:   _UPDATE_STEPS,
+    DELETE:   _DELETE_STEPS,
+    CREATE:   _CREATE_STEPS,
+    ALTER:    _ALTER_STEPS,
+    DROP:     _ALTER_STEPS,   # reuse ALTER animation
+    TRUNCATE: _TRUNCATE_STEPS,
+    OTHER:    _DEFAULT_STEPS,
 }
 
 _DURATION_MAP = {
-    SELECT: 3000,
-    INSERT: 3500,
-    UPDATE: 3500,
-    DELETE: 3500,
-    CREATE: 3500,
-    ALTER:  3000,
-    DROP:   3000,
-    OTHER:  2000,
+    SELECT:   3000,
+    INSERT:   3500,
+    UPDATE:   3500,
+    DELETE:   3500,
+    CREATE:   3500,
+    ALTER:    3000,
+    DROP:     3000,
+    TRUNCATE: 2500,
+    OTHER:    2000,
 }
 
 _COLOR_MAP = {
-    SELECT: "#2196F3",
-    INSERT: "#4CAF50",
-    UPDATE: "#FF9800",
-    DELETE: "#F44336",
-    CREATE: "#9C27B0",
-    ALTER:  "#9C27B0",
-    DROP:   "#F44336",
-    OTHER:  "#607D8B",
+    SELECT:   "#2196F3",
+    INSERT:   "#4CAF50",
+    UPDATE:   "#FF9800",
+    DELETE:   "#F44336",
+    CREATE:   "#9C27B0",
+    ALTER:    "#00BCD4",
+    DROP:     "#F44336",
+    TRUNCATE: "#FF5722",
+    OTHER:    "#607D8B",
 }
 
 _DESCRIPTION_MAP = {
-    SELECT: "Rows are being selected from the table",
-    INSERT: "A new row is being inserted into the table",
-    UPDATE: "Existing row values are being updated",
-    DELETE: "Matching rows are being removed from the table",
-    CREATE: "A new table structure is being created",
-    ALTER:  "The table structure is being modified",
-    DROP:   "The table is being dropped",
-    OTHER:  "Query is executing",
+    SELECT:   "Rows are being selected from the table",
+    INSERT:   "A new row is being inserted into the table",
+    UPDATE:   "Existing row values are being updated",
+    DELETE:   "Matching rows are being removed from the table",
+    CREATE:   "A new table structure is being created",
+    ALTER:    "The table structure is being modified",
+    DROP:     "The table is being dropped",
+    TRUNCATE: "All rows are being removed from the table",
+    OTHER:    "Query is executing",
 }
 
 

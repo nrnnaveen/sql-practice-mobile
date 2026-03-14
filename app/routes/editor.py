@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import re
 import sqlite3
 import time
 import logging
@@ -21,6 +22,8 @@ from app.services.db_admin_service import get_user_db_info
 from app.utils.db_init import DB_PATH
 from app.utils.validators import validate_query
 from app.utils.decorators import rate_limit
+from app.services.query_parser_service import parse_query_type
+from app.services.visualizer_service import get_animation_data
 
 editor_bp = Blueprint("editor", __name__)
 logger = logging.getLogger(__name__)
@@ -318,4 +321,181 @@ def export_results():
             mimetype="text/csv",
             headers={"Content-Disposition": "attachment; filename=results.csv"},
         )
+
+
+def _get_db_schema(db_info: dict) -> list:
+    """Return a list of table descriptors from the sandbox database.
+
+    Each descriptor has: name, columns ([{name, type, pk}]), row_count.
+    Returns an empty list on error.
+    """
+    if not db_info:
+        return []
+    db_type = db_info.get("db_type", "mysql")
+    tables = []
+    try:
+        if db_type == "mysql":
+            import mysql.connector  # type: ignore
+            conn = mysql.connector.connect(
+                host=db_info["db_host"],
+                port=db_info["db_port"],
+                user=db_info["db_user"],
+                password=db_info["db_password"],
+                database=db_info["db_name"],
+                connection_timeout=10,
+            )
+            cursor = conn.cursor()
+            cursor.execute("SHOW TABLES")
+            table_names = [row[0] for row in cursor.fetchall()]
+            for tname in table_names:
+                safe_name = re.sub(r"[^\w]", "", tname)
+                cursor.execute(f"DESCRIBE `{safe_name}`")
+                cols = [
+                    {"name": row[0], "type": str(row[1]).upper(), "pk": row[3] == "PRI"}
+                    for row in cursor.fetchall()
+                ]
+                cursor.execute(f"SELECT COUNT(*) FROM `{safe_name}`")
+                count = cursor.fetchone()[0]
+                tables.append({"name": tname, "columns": cols, "row_count": count})
+            cursor.close()
+            conn.close()
+        else:  # postgres
+            import psycopg2  # type: ignore
+            conn = psycopg2.connect(
+                host=db_info["db_host"],
+                port=db_info["db_port"],
+                user=db_info["db_user"],
+                password=db_info["db_password"],
+                database=db_info["db_name"],
+                connect_timeout=10,
+            )
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'public' ORDER BY table_name"
+            )
+            table_names = [row[0] for row in cursor.fetchall()]
+            for tname in table_names:
+                cursor.execute(
+                    "SELECT c.column_name, c.data_type, "
+                    "(SELECT COUNT(*) FROM information_schema.table_constraints tc "
+                    " JOIN information_schema.constraint_column_usage ccu "
+                    "   ON tc.constraint_name = ccu.constraint_name "
+                    "   AND tc.table_name = ccu.table_name "
+                    " WHERE tc.constraint_type = 'PRIMARY KEY' "
+                    "   AND tc.table_name = %s "
+                    "   AND ccu.column_name = c.column_name) > 0 AS is_pk "
+                    "FROM information_schema.columns c "
+                    "WHERE c.table_schema = 'public' AND c.table_name = %s "
+                    "ORDER BY c.ordinal_position",
+                    (tname, tname),
+                )
+                cols = [
+                    {"name": row[0], "type": str(row[1]).upper(), "pk": bool(row[2])}
+                    for row in cursor.fetchall()
+                ]
+                cursor.execute(f'SELECT COUNT(*) FROM "{tname}"')
+                count = cursor.fetchone()[0]
+                tables.append({"name": tname, "columns": cols, "row_count": count})
+            cursor.close()
+            conn.close()
+    except Exception as exc:
+        logger.error("Schema fetch error (%s): %s", db_type, exc)
+    return tables
+
+
+@editor_bp.route("/editor/get-schema", methods=["GET"])
+@rate_limit
+def get_schema():
+    """Return the current database schema as JSON (for Workbench visualization)."""
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    db_type = request.args.get("db_type", "mysql")
+    sandbox_db = get_user_db_info(user_id, db_type) or get_user_db_info(user_id)
+    if not sandbox_db:
+        return jsonify({"tables": [], "message": "No sandbox database found."})
+
+    tables = _get_db_schema(sandbox_db)
+    return jsonify({"tables": tables, "db_type": sandbox_db.get("db_type")})
+
+
+@editor_bp.route("/editor/execute-query", methods=["POST"])
+@rate_limit
+def execute_query_ajax():
+    """AJAX endpoint: execute a query and return JSON with result + animation config.
+
+    Used by the Workbench frontend to avoid full page reloads.
+    Response shape:
+      {
+        "result":         { columns?, rows?, message?, error? },
+        "query_type":     "SELECT" | "INSERT" | ...,
+        "animation_data": { color, duration_ms, description, steps },
+        "execution_time": 0.123,
+        "schema":         [{name, columns, row_count}, ...]
+      }
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    query = request.form.get("query", "").strip()
+    selected_db = request.form.get("database", "mysql")
+
+    if not query:
+        return jsonify({"error": "No query provided."}), 400
+
+    qtype = parse_query_type(query)
+    anim_data = get_animation_data(qtype)
+
+    sandbox_db = get_user_db_info(user_id, selected_db) or get_user_db_info(user_id)
+
+    start_time = time.time()
+
+    if sandbox_db:
+        raw_result = _run_sandbox_query(sandbox_db, query)
+    else:
+        is_valid, validation_error = validate_query(query)
+        if not is_valid:
+            return jsonify({
+                "error": validation_error,
+                "query_type": qtype,
+                "animation_data": anim_data,
+            }), 400
+        if selected_db == "mysql":
+            raw_result = run_mysql(query)
+        elif selected_db == "postgres":
+            raw_result = run_postgres(query)
+        else:
+            raw_result = {"error": "Unknown database type."}
+
+    elapsed = round(time.time() - start_time, 3)
+
+    # Ensure rows are JSON-serialisable (convert tuples → lists)
+    if raw_result and not raw_result.get("error") and raw_result.get("rows"):
+        raw_result = dict(raw_result)
+        raw_result["rows"] = [list(r) for r in raw_result["rows"]]
+
+    error_msg = (raw_result or {}).get("error")
+    _save_history(
+        user_id, query, selected_db,
+        execution_time=elapsed,
+        success=(error_msg is None),
+        error_message=error_msg,
+    )
+
+    # Fetch updated schema after the query so the frontend can sync its cache
+    schema = _get_db_schema(sandbox_db) if sandbox_db else []
+
+    if raw_result and not raw_result.get("error"):
+        raw_result["execution_time"] = elapsed
+
+    return jsonify({
+        "result":         raw_result,
+        "query_type":     qtype,
+        "animation_data": anim_data,
+        "execution_time": elapsed,
+        "schema":         schema,
+    })
 

@@ -287,17 +287,48 @@
     after(data.duration_ms || 2000, onComplete);
   }
 
+  /* ── TRUNCATE animation ── */
+  function animateTruncate(container, data, sql, onComplete) {
+    clearHighlights(container);
+    var table = findTargetTable(container, sql);
+    if (!table) { after(100, onComplete); return; }
+
+    // 0s – orange-red flash
+    table.classList.add('anim-truncate-flash');
+    table.style.borderColor = '#FF5722';
+    table.style.boxShadow   = '0 0 20px rgba(255,87,34,0.5)';
+
+    // 0.5s – show cleared indicator
+    after(500, function () {
+      var indicator = document.createElement('div');
+      indicator.className = 'dbviz-deleted-row-indicator';
+      indicator.innerHTML = '🗑️ all rows cleared';
+      var colList = qs('.dbviz-col-list', table);
+      if (colList) colList.parentNode.insertBefore(indicator, colList.nextSibling);
+      else table.appendChild(indicator);
+    });
+
+    // 2s – reset border
+    after(2000, function () {
+      table.style.borderColor = '';
+      table.style.boxShadow   = '';
+    });
+
+    after(data.duration_ms || 2500, onComplete);
+  }
+
   /* ── Public dispatcher ── */
   function play(queryType, container, data, sql, onComplete) {
     var cb = typeof onComplete === 'function' ? onComplete : function () {};
     var fn = {
-      SELECT: animateSelect,
-      INSERT: animateInsert,
-      UPDATE: animateUpdate,
-      DELETE: animateDelete,
-      CREATE: animateCreate,
-      ALTER : animateAlter,
-      DROP  : animateDrop
+      SELECT:   animateSelect,
+      INSERT:   animateInsert,
+      UPDATE:   animateUpdate,
+      DELETE:   animateDelete,
+      CREATE:   animateCreate,
+      ALTER:    animateAlter,
+      DROP:     animateDrop,
+      TRUNCATE: animateTruncate,
     }[queryType] || animateOther;
 
     fn(container, data || {}, sql || '', cb);
