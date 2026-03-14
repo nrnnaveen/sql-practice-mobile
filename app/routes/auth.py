@@ -13,7 +13,14 @@ logger = logging.getLogger(__name__)
 
 @auth_bp.route("/")
 def home():
-    return redirect("/login")
+    if "user_id" in session:
+        return redirect("/dashboard")
+    return render_template("login.html", error=None)
+
+
+@auth_bp.route("/health")
+def health():
+    return "OK", 200
 
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
