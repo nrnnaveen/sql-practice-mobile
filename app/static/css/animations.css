@@ -46,11 +46,33 @@
   50%       { box-shadow: 0 0 24px currentColor; }
 }
 
-/* ── Cell flash (UPDATE) ── */
+/* ── Blue glow pulse (SELECT – blue themed) ── */
+@keyframes selectGlowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(33,150,243,0.4), 0 0 0 rgba(33,150,243,0); border-color: rgba(33,150,243,0.6); }
+  50%       { box-shadow: 0 0 20px rgba(33,150,243,0.8), 0 0 40px rgba(33,150,243,0.3); border-color: #2196F3; }
+}
+
+/* ── Bounce-in for INSERT ── */
+@keyframes insertBounceIn {
+  0%   { transform: translateY(-30px) scale(0.95); opacity: 0; border-color: rgba(76,175,80,0.3); }
+  50%  { transform: translateY(4px)   scale(1.02); opacity: 1; border-color: #4CAF50; }
+  75%  { transform: translateY(-2px)  scale(0.99); }
+  100% { transform: translateY(0)     scale(1);    opacity: 1; border-color: #4CAF50; }
+}
+
+/* ── Orange cell flash (UPDATE) ── */
 @keyframes cellFlash {
   0%, 100% { background: transparent; }
   25%       { background: rgba(255, 152, 0, 0.35); }
   75%       { background: rgba(255, 152, 0, 0.15); }
+}
+
+/* ── UPDATE highlight flash on table card ── */
+@keyframes updateFlash {
+  0%   { border-color: rgba(255,152,0,0.3); box-shadow: none; }
+  20%  { border-color: #FF9800; box-shadow: 0 0 20px rgba(255,152,0,0.5); background: rgba(255,152,0,0.06); }
+  60%  { border-color: #FF9800; box-shadow: 0 0 12px rgba(255,152,0,0.35); }
+  100% { border-color: #FF9800; box-shadow: 0 0 20px rgba(255,152,0,0.35); background: transparent; }
 }
 
 /* ── Row delete fade ── */
@@ -58,6 +80,16 @@
   0%   { background: transparent;          opacity: 1; }
   30%  { background: rgba(244,67,54,0.25); opacity: 0.9; }
   100% { background: rgba(244,67,54,0.25); opacity: 0; }
+}
+
+/* ── DELETE table slide-shake ── */
+@keyframes deleteShake {
+  0%   { transform: translateX(0);   border-color: #F44336; }
+  20%  { transform: translateX(-5px); }
+  40%  { transform: translateX(5px);  }
+  60%  { transform: translateX(-3px); }
+  80%  { transform: translateX(3px);  }
+  100% { transform: translateX(0);   }
 }
 
 /* ── Stagger slide from left (CREATE columns) ── */
@@ -84,6 +116,15 @@
   to   { transform: translateX(-60px) scale(0.85); opacity: 0; }
 }
 
+/* ── ALTER morph/scale animation ── */
+@keyframes alterMorph {
+  0%   { transform: scale(1);    border-color: rgba(0,188,212,0.3); box-shadow: 0 0 4px rgba(0,188,212,0.2); }
+  25%  { transform: scale(1.04); border-color: #00BCD4; box-shadow: 0 0 18px rgba(0,188,212,0.6); }
+  50%  { transform: scale(0.98); border-color: #00BCD4; box-shadow: 0 0 10px rgba(0,188,212,0.4); }
+  75%  { transform: scale(1.02); border-color: #00BCD4; box-shadow: 0 0 14px rgba(0,188,212,0.5); }
+  100% { transform: scale(1);    border-color: #00BCD4; box-shadow: 0 0 18px rgba(0,188,212,0.35); }
+}
+
 /* ── Utility animation classes ── */
 .anim-fade-in  { animation: fadeIn  0.4s ease forwards; }
 .anim-fade-out { animation: fadeOut 0.4s ease forwards; }
@@ -98,6 +139,42 @@
 .anim-slide-in-right { animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 .anim-slide-out-left { animation: slideOutLeft 0.5s ease-in forwards; }
 .anim-rotate-out     { animation: rotateOut   0.5s ease-in forwards; }
+
+/* ── Query-type specific animation classes ── */
+
+/* SELECT: blue glow pulse — pulses twice to signal data is being read */
+.anim-query-select {
+  animation: selectGlowPulse 1.2s ease-in-out 2;
+}
+
+/* INSERT: green bounce-in */
+.anim-query-insert {
+  animation: insertBounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* UPDATE: orange flash */
+.anim-query-update {
+  animation: updateFlash 1s ease forwards;
+}
+
+/* DELETE: red shake */
+.anim-query-delete {
+  animation: deleteShake 0.6s ease forwards;
+  border-color: #F44336 !important;
+  box-shadow: 0 0 20px rgba(244,67,54,0.35) !important;
+}
+
+/* CREATE: purple scale-pop */
+.anim-query-create {
+  animation: scalePop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border-color: #9C27B0 !important;
+  box-shadow: 0 0 20px rgba(156,39,176,0.35) !important;
+}
+
+/* ALTER: cyan morph */
+.anim-query-alter {
+  animation: alterMorph 1s ease forwards;
+}
 
 /* ── Stagger delays for column slide ── */
 .anim-stagger-1 { animation-delay: 0.1s; }
@@ -129,6 +206,7 @@
 
 .anim-truncate-flash { animation: truncateFlash 2.5s ease forwards; }
 .anim-alter-glow     { animation: alterGlow 0.8s ease 3; }
+.anim-alter-morph    { animation: alterMorph 1s ease forwards; }
 
 /* ── Reduce motion preference ── */
 @media (prefers-reduced-motion: reduce) {
@@ -138,3 +216,4 @@
     transition-duration: 0.01ms !important;
   }
 }
+
