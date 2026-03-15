@@ -1,0 +1,50 @@
+{
+  "name": "sql-practice-mobile",
+  "version": "1.0.0",
+  "description": "SQL Practice Mobile – Cordova wrapper for the SQL Practice web app.",
+  "main": "index.js",
+  "scripts": {
+    "build:android": "cordova build android",
+    "build:android:release": "cordova build android --release",
+    "build:ios": "cordova build ios",
+    "run:android": "cordova run android",
+    "run:ios": "cordova run ios",
+    "plugin:install": "cordova plugin add cordova-plugin-inappbrowser && cordova plugin add cordova-plugin-whitelist && cordova plugin add cordova-plugin-statusbar && cordova plugin add cordova-plugin-splashscreen && cordova plugin add cordova-plugin-device",
+    "platform:android": "cordova platform add android",
+    "platform:ios": "cordova platform add ios"
+  },
+  "cordova": {
+    "plugins": {
+      "cordova-plugin-inappbrowser": {},
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-statusbar": {
+        "StatusBarBackgroundColor": "#667eea",
+        "StatusBarStyle": "lightcontent"
+      },
+      "cordova-plugin-splashscreen": {},
+      "cordova-plugin-device": {}
+    },
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "dependencies": {
+    "cordova": "^12.0.0",
+    "cordova-android": "^12.0.0",
+    "cordova-ios": "^7.0.0",
+    "cordova-plugin-device": "^2.1.0",
+    "cordova-plugin-inappbrowser": "^5.0.0",
+    "cordova-plugin-splashscreen": "^5.0.4",
+    "cordova-plugin-statusbar": "^2.4.3",
+    "cordova-plugin-whitelist": "^1.3.5"
+  },
+  "keywords": [
+    "cordova",
+    "sql",
+    "practice",
+    "mobile"
+  ],
+  "author": "M.NAVEEN",
+  "license": "MIT"
+}
