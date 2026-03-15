@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, redirect, render_template, request, sessio
 from app import oauth
 from app.services.auth_service import create_user, login_user, get_or_create_google_user
 from app.utils.db_init import DB_PATH
+from app.utils.user_agent import UserAgentDetector
 
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
@@ -60,9 +61,10 @@ def login():
 @auth_bp.route("/login/google")
 def login_google():
     """Initiate Google OAuth flow."""
+    UserAgentDetector.log_user_agent()
     logger.info(
-        "Google OAuth initiated – User-Agent: %s | Origin: %s | Host: %s",
-        request.headers.get("User-Agent"),
+        "Google OAuth initiated – Cordova: %s | Origin: %s | Host: %s",
+        UserAgentDetector.is_cordova(),
         request.headers.get("Origin"),
         request.host,
     )
