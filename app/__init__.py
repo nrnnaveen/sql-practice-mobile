@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from flask import Flask
 from authlib.integrations.flask_client import OAuth
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 oauth = OAuth()
 
@@ -33,6 +34,11 @@ def create_app():
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     )
+
+    # Trust the X-Forwarded-Proto and X-Forwarded-For headers set by Railway
+    # (and other reverse proxies) so that url_for() generates HTTPS URLs and
+    # request.remote_addr reflects the real client IP.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Initialise Authlib OAuth
     oauth.init_app(app)

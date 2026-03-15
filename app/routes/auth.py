@@ -1,4 +1,5 @@
 import logging
+import os
 import sqlite3
 
 from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
@@ -68,7 +69,12 @@ def login_google():
         request.headers.get("Origin"),
         request.host,
     )
-    redirect_uri = url_for("auth.google_callback", _external=True)
+    if "railway" in os.environ.get("DATABASE_URL", "").lower() or os.environ.get("RAILWAY_ENVIRONMENT"):
+        # Safety fallback: force HTTPS scheme on Railway even if ProxyFix has not
+        # yet received the X-Forwarded-Proto header (e.g. first request, edge cases).
+        redirect_uri = url_for("auth.google_callback", _external=True, _scheme="https")
+    else:
+        redirect_uri = url_for("auth.google_callback", _external=True)
     logger.info("Google OAuth redirect URI: %s", redirect_uri)
     return oauth.google.authorize_redirect(redirect_uri)
 
