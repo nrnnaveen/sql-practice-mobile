@@ -810,6 +810,7 @@ body.dashboard-bg::before {
 
 /* Wider dashboard cards for data-heavy pages (desktop/tablet) */
 .dash-card-wide {
+    width: 100%;
     max-width: 100%;
     text-align: left;
 }

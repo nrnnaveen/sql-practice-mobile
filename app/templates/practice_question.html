@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Q{{ question_num }}/{{ total_questions }} – {{ diff_info.label }} {{ db_type | upper }} Practice</title>
 <style>
-  /* ── Override dash-card/dash-main for practice full-width layout ── */
-  .dash-main{align-items:flex-start;}
-  .dash-card{max-width:none;width:100%;text-align:left;overflow-x:visible;}
+  /* ── Practice page wide container ── */
+  .practice-page-main{align-items:flex-start;}
+  .practice-page-card{text-align:left;overflow-x:visible;}
 
   /* ── Practice Layout (base styles — overridden by responsive CSS below) ── */
   .practice-layout{display:grid;grid-template-columns:1fr 280px;gap:1rem;margin-top:1rem;}
@@ -105,8 +105,8 @@
   </div>
 </nav>
 
-<main class="dash-main" style="padding-top:0.5rem;">
-<div class="dash-card fade-in" style="padding:1rem;">
+<main class="dash-main practice-page-main" style="padding-top:0.5rem;">
+<div class="dash-card dash-card-wide practice-page-card fade-in" style="padding:1rem;">
 
   <!-- Header -->
   <div class="practice-header">
