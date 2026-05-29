@@ -51,7 +51,7 @@
         .progress-continue-link{display:block;font-size:0.85rem;color:var(--accent,#7c3aed);text-decoration:none;padding:0.2rem 0;}
         .progress-continue-link:hover{text-decoration:underline;}
         .dual-db-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
-        @media(max-width:600px){.dual-db-grid{grid-template-columns:1fr;}}
+        @media(max-width:767px){.dual-db-grid{grid-template-columns:1fr;}}
     </style>
 </head>
 <body class="dashboard-bg">
@@ -85,7 +85,7 @@
 
     <!-- ── Main content ── -->
     <main class="dash-main">
-        <div class="dash-card fade-in">
+        <div class="dash-card dash-card-wide fade-in">
             <div class="dash-welcome">Welcome {{ display_name }} &#x1F44B;</div>
             <div class="dash-subtitle">SQL Playground – Your Personal Sandbox</div>
 
@@ -474,4 +474,3 @@
     <script src="{{ url_for('static', filename='js/creator_info.js') }}"></script>
 </body>
 </html>
-
