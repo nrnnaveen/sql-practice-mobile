@@ -808,6 +808,24 @@ body.dashboard-bg::before {
     transition: box-shadow 0.3s ease;
 }
 
+/* Wider dashboard cards for data-heavy pages (desktop/tablet) */
+.dash-card-wide {
+    max-width: 100%;
+    text-align: left;
+}
+
+@media (min-width: 768px) {
+    .dash-card-wide {
+        max-width: 960px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .dash-card-wide {
+        max-width: 1120px;
+    }
+}
+
 .dash-card:hover {
     box-shadow:
         0 0 0 1px rgba(137, 180, 250, 0.15),

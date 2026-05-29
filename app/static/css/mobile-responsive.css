@@ -82,6 +82,26 @@
     padding-bottom: 0.75rem;
   }
 
+  .editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    align-items: start;
+    gap: 1rem;
+  }
+
+  .editor-main {
+    min-width: 0;
+  }
+
+  .editor-layout > .history-panel {
+    grid-column: 2;
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 5rem);
+    overflow-y: auto;
+    order: unset;
+  }
+
   /* Practice layout: main column + history sidebar */
   .practice-layout {
     display: grid;
@@ -165,4 +185,3 @@
   border-radius: 50%;
   background: var(--accent, #7c3aed);
 }
-

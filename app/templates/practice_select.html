@@ -11,6 +11,7 @@
   .back-link{color:var(--text-muted,#aaa);text-decoration:none;font-size:0.9rem;display:flex;align-items:center;gap:0.3rem;}
   .back-link:hover{color:inherit;}
   .diff-grid{display:grid;gap:1rem;margin-top:1.5rem;}
+  @media(min-width:1024px){.diff-grid{grid-template-columns:1fr 1fr;}}
   .diff-card{background:var(--card-bg,#1e1e2e);border:2px solid var(--border,#333);border-radius:12px;padding:1.5rem;text-decoration:none;color:inherit;transition:border-color 0.2s,transform 0.15s;display:block;}
   .diff-card:hover{transform:translateY(-2px);}
   .diff-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
@@ -37,7 +38,7 @@
 </nav>
 
 <main class="dash-main">
-  <div class="dash-card fade-in">
+  <div class="dash-card dash-card-wide fade-in">
 
     <div class="practice-header">
       <span class="db-badge-lg {{ db_type }}">{{ db_type | upper }}</span>
