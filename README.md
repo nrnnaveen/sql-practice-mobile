@@ -186,4 +186,6 @@ The best time to learn SQL was yesterday. The second best time is **right now**.
 
 *Built with ❤️ for SQL lovers everywhere*
 
+                     *-Naveen*
+
 </div>
