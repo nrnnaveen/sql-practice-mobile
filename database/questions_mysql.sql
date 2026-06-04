@@ -1,4 +1,4 @@
--- MySQL practice questions
+-- MySQL practice questions 30 --> 90
 -- Auto-generated from app/data/questions.py
 
 INSERT INTO sql_questions
