@@ -1,4 +1,4 @@
-# 🚀 SQL Practice Mobile Playground
+# SQL Practice Mobile Playground
 
 > **Master SQL with an interactive, mobile-first learning companion**
 
