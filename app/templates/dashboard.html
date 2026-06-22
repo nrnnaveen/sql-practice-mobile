@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>SQL Practice Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/creator_modal.css') }}">
+    <style>
+        .db-info-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
+        .db-info-card h3{margin:0 0 1rem;color:var(--accent,#7c3aed);}
+        .db-info-table{width:100%;border-collapse:collapse;}
+        .db-info-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border,#333);}
+        .db-info-table td:first-child{font-weight:600;color:var(--text-muted,#aaa);width:40%;}
+        .db-badge{display:inline-block;background:var(--accent,#7c3aed);color:#fff;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.8rem;text-transform:uppercase;}
+        .db-badge.mysql{background:#f59e0b;}
+        .db-badge.postgres{background:#3b82f6;}
+        .create-form-card{background:var(--card-bg,#1e1e2e);border:1px solid var(--border,#333);border-radius:12px;padding:1.5rem;margin:1rem 0;}
+        .create-form-card h3{margin:0 0 0.5rem;color:var(--accent,#7c3aed);}
+        .create-form-card p{color:var(--text-muted,#aaa);margin:0 0 1.5rem;font-size:0.9rem;}
+        .form-row{margin-bottom:1rem;}
+        .form-row label{display:block;font-weight:600;margin-bottom:0.4rem;font-size:0.9rem;}
+        .form-row input,.form-row select{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--border,#333);border-radius:6px;background:var(--input-bg,#2a2a3e);color:inherit;font-size:0.95rem;box-sizing:border-box;}
+        .username-feedback{font-size:0.8rem;margin-top:0.3rem;min-height:1.2em;}
+        .username-feedback.ok{color:#4ade80;}
+        .username-feedback.err{color:#f87171;}
+        .password-strength{font-size:0.8rem;margin-top:0.3rem;}
+        .strength-bar{height:4px;border-radius:2px;margin-top:4px;transition:all 0.3s;}
+        .btn-create{width:100%;padding:0.8rem;background:var(--accent,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:0.5rem;}
+        .btn-create:disabled{opacity:0.5;cursor:not-allowed;}
+        .success-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;}
+        .success-modal-overlay.show{display:flex;}
+        .success-modal{background:var(--card-bg,#1e1e2e);border:1px solid var(--accent,#7c3aed);border-radius:12px;padding:2rem;max-width:480px;width:90%;max-height:85vh;overflow-y:auto;}
+        .success-modal h3{color:#4ade80;margin:0 0 1rem;}
+        .cred-row{display:flex;justify-content:space-between;align-items:center;padding:0.5rem;background:rgba(255,255,255,0.05);border-radius:6px;margin:0.4rem 0;font-family:monospace;font-size:0.85rem;}
+        .copy-btn{background:var(--accent,#7c3aed);color:#fff;border:none;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;}
+        .info-banner{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.9rem;color:var(--text-muted,#ccc);}
+        .db-section{border-left:3px solid var(--border,#444);padding-left:1rem;margin:1.5rem 0;}
+        .db-section-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;}
+        .db-section-header h4{margin:0;font-size:1rem;}
+        .practice-btn{display:block;width:100%;padding:0.75rem;text-align:center;background:var(--accent,#7c3aed);color:#fff;border:none;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;text-decoration:none;margin-top:0.75rem;}
+        .practice-btn.mysql-btn{background:#f59e0b;}
+        .practice-btn.mysql-btn:hover{background:#d97706;}
+        .practice-btn.postgres-btn{background:#3b82f6;}
+        .practice-btn.postgres-btn:hover{background:#2563eb;}
+        .practice-btn.workbench-btn{background:#6b7280;}
+        .practice-btn.workbench-btn:hover{background:#4b5563;}
+        .practice-options{display:flex;flex-direction:column;gap:0.5rem;}
+        .progress-summary{margin-top:0.75rem;padding:0.6rem 0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border,#333);}
+        .progress-summary-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted,#aaa);margin-bottom:0.4rem;}
+        .progress-continue-link{display:block;font-size:0.85rem;color:var(--accent,#7c3aed);text-decoration:none;padding:0.2rem 0;}
+        .progress-continue-link:hover{text-decoration:underline;}
+        .dual-db-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;}
+        @media(max-width:767px){.dual-db-grid{grid-template-columns:1fr;}}
+    </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-full.css') }}">
+</head>
+<body class="dashboard-bg">
+
+    <!-- ── Navbar ── -->
+    <nav class="dash-nav">
+        <span class="dash-nav-brand">&#x25A0; SQL Playground</span>
+        <div class="profile-menu-wrapper">
+            <button class="profile-avatar-btn" id="avatarBtn" aria-label="Profile menu" aria-expanded="false">
+                {% if user.picture %}
+                    <img src="{{ user.picture }}" alt="Avatar" class="profile-avatar-img">
+                {% else %}
+                    <span class="profile-avatar-initials">{{ display_name[0] | upper }}</span>
+                {% endif %}
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" role="menu">
+                <a href="{{ url_for('profile.profile') }}" class="profile-dropdown-item" role="menuitem">
+                    <span>&#x1F464;</span> Profile
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="profile-dropdown-item profile-dropdown-logout" role="menuitem">
+                    <span>&#x23FB;</span> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Greeting popup bubble ── -->
+    <div class="greeting-bubble" id="greetingBubble" aria-live="polite">
+        Hi {{ display_name }} &#x1F44B; Ready to practice SQL?
+    </div>
+
+    <!-- ── Main content ── -->
+    <main class="dash-main">
+        <div class="dash-card dash-card-wide fade-in">
+            <div class="dash-welcome">Welcome {{ display_name }} &#x1F44B;</div>
+            <div class="dash-subtitle">SQL Playground – Your Personal Sandbox</div>
+
+            <div class="info-banner">
+                &#x2728; Practice <strong>any SQL command</strong> — SELECT, INSERT, UPDATE, DELETE, CREATE, DROP and more —
+                on your personal isolated databases. Create one MySQL and one PostgreSQL database, each pre-loaded with sample data.
+            </div>
+
+            <!-- ── Dual Database Grid ── -->
+            <div class="dual-db-grid">
+
+                <!-- ── MySQL Section ── -->
+                <div>
+                {% if mysql_db %}
+                    <!-- MySQL database exists: show info + Practice/Workbench buttons -->
+                    <div class="db-info-card">
+                        <div class="db-section-header">
+                            <span class="db-badge mysql">MySQL</span>
+                            <h4>&#x2705; Ready to Practice</h4>
+                        </div>
+                        <table class="db-info-table">
+                            <tr><td>Database</td><td><code>{{ mysql_db.db_name }}</code></td></tr>
+                            <tr><td>Username</td><td><code>{{ mysql_db.db_user }}</code></td></tr>
+                            <tr><td>Host</td><td><code>{{ mysql_db.db_host }}</code></td></tr>
+                            <tr><td>Port</td><td><code>{{ mysql_db.db_port }}</code></td></tr>
+                        </table>
+                        <div class="practice-options">
+                            <a href="{{ url_for('practice.select_difficulty', db_type='mysql') }}" class="practice-btn mysql-btn">
+                                &#x1F4DA; Practice MySQL with Questions
+                            </a>
+                            <a href="{{ url_for('editor.editor_mysql') }}" class="practice-btn workbench-btn">
+                                &#x1F6E0; MySQL Workbench
+                            </a>
+                        </div>
+                        {% if practice_progress %}
+                        {% set mysql_progress = practice_progress | selectattr('db_type', 'equalto', 'mysql') | list %}
+                        {% if mysql_progress %}
+                        <div class="progress-summary">
+                            <div class="progress-summary-label">Your Progress:</div>
+                            {% for p in mysql_progress %}
+                            {% if p.completed_count > 0 %}
+                            <a href="{{ url_for('practice.practice_start', db_type='mysql', difficulty=p.difficulty) }}"
+                               class="progress-continue-link">
+                                &#x25B6; Continue {{ p.difficulty | capitalize }}
+                                ({{ p.completed_count }}/{{ difficulty_totals.get(p.difficulty, '?') }})
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- No MySQL DB: show create form -->
+                    <div class="create-form-card" id="mysql-create-card">
+                        <div class="db-section-header">
+                            <span class="db-badge mysql">MySQL</span>
+                            <h4>Create Database</h4>
+                        </div>
+                        <p>Set up your personal MySQL sandbox. Pre-loaded with sample data (employees, products, orders).</p>
+
+                        <div class="form-row">
+                            <label for="mysql-username">Database Username</label>
+                            <input type="text" id="mysql-username" placeholder="e.g. john_mysql" autocomplete="off"
+                                   minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
+                            <div class="username-feedback" id="mysql-username-feedback"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="mysql-password">Database Password</label>
+                            <input type="password" id="mysql-password" placeholder="Min 8 characters" autocomplete="new-password">
+                            <div class="password-strength" id="mysql-pw-strength-text"></div>
+                            <div class="strength-bar" id="mysql-pw-strength-bar" style="width:0;background:#f87171"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="mysql-password-confirm">Confirm Password</label>
+                            <input type="password" id="mysql-password-confirm" placeholder="Repeat password" autocomplete="new-password">
+                            <div class="username-feedback" id="mysql-pw-confirm-feedback"></div>
+                        </div>
+
+                        <button class="btn-create" id="mysql-btn-create" data-db-type="mysql" disabled>
+                            &#x1F527; Create MySQL Database
+                        </button>
+                        <div id="mysql-create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
+                    </div>
+                {% endif %}
+                </div>
+
+                <!-- ── PostgreSQL Section ── -->
+                <div>
+                {% if postgres_db %}
+                    <!-- PostgreSQL database exists: show info + Practice/Workbench buttons -->
+                    <div class="db-info-card">
+                        <div class="db-section-header">
+                            <span class="db-badge postgres">PostgreSQL</span>
+                            <h4>&#x2705; Ready to Practice</h4>
+                        </div>
+                        <table class="db-info-table">
+                            <tr><td>Database</td><td><code>{{ postgres_db.db_name }}</code></td></tr>
+                            <tr><td>Username</td><td><code>{{ postgres_db.db_user }}</code></td></tr>
+                            <tr><td>Host</td><td><code>{{ postgres_db.db_host }}</code></td></tr>
+                            <tr><td>Port</td><td><code>{{ postgres_db.db_port }}</code></td></tr>
+                        </table>
+                        <div class="practice-options">
+                            <a href="{{ url_for('practice.select_difficulty', db_type='postgres') }}" class="practice-btn postgres-btn">
+                                &#x1F4DA; Practice PostgreSQL with Questions
+                            </a>
+                            <a href="{{ url_for('editor.editor_postgresql') }}" class="practice-btn workbench-btn">
+                                &#x1F6E0; PostgreSQL Workbench
+                            </a>
+                        </div>
+                        {% if practice_progress %}
+                        {% set pg_progress = practice_progress | selectattr('db_type', 'equalto', 'postgres') | list %}
+                        {% if pg_progress %}
+                        <div class="progress-summary">
+                            <div class="progress-summary-label">Your Progress:</div>
+                            {% for p in pg_progress %}
+                            {% if p.completed_count > 0 %}
+                            <a href="{{ url_for('practice.practice_start', db_type='postgres', difficulty=p.difficulty) }}"
+                               class="progress-continue-link">
+                                &#x25B6; Continue {{ p.difficulty | capitalize }}
+                                ({{ p.completed_count }}/{{ difficulty_totals.get(p.difficulty, '?') }})
+                            </a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- No PostgreSQL DB: show create form -->
+                    <div class="create-form-card" id="postgres-create-card">
+                        <div class="db-section-header">
+                            <span class="db-badge postgres">PostgreSQL</span>
+                            <h4>Create Database</h4>
+                        </div>
+                        <p>Set up your personal PostgreSQL sandbox. Pre-loaded with sample data (employees, products, orders).</p>
+
+                        <div class="form-row">
+                            <label for="pg-username">Database Username</label>
+                            <input type="text" id="pg-username" placeholder="e.g. john_pg" autocomplete="off"
+                                   minlength="3" maxlength="30" pattern="[a-z][a-z0-9_]{2,29}">
+                            <div class="username-feedback" id="pg-username-feedback"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="pg-password">Database Password</label>
+                            <input type="password" id="pg-password" placeholder="Min 8 characters" autocomplete="new-password">
+                            <div class="password-strength" id="pg-pw-strength-text"></div>
+                            <div class="strength-bar" id="pg-pw-strength-bar" style="width:0;background:#f87171"></div>
+                        </div>
+
+                        <div class="form-row">
+                            <label for="pg-password-confirm">Confirm Password</label>
+                            <input type="password" id="pg-password-confirm" placeholder="Repeat password" autocomplete="new-password">
+                            <div class="username-feedback" id="pg-pw-confirm-feedback"></div>
+                        </div>
+
+                        <button class="btn-create" id="pg-btn-create" data-db-type="postgres" disabled>
+                            &#x1F527; Create PostgreSQL Database
+                        </button>
+                        <div id="pg-create-error" style="color:#f87171;margin-top:0.5rem;font-size:0.9rem;"></div>
+                    </div>
+                {% endif %}
+                </div>
+
+            </div><!-- /dual-db-grid -->
+
+        </div>
+    </main>
+
+    <!-- ── Success Modal ── -->
+    <div class="success-modal-overlay" id="successModal">
+        <div class="success-modal">
+            <h3>&#x1F389; Database Created!</h3>
+            <p>Your sandbox database is ready. Here are your connection details:</p>
+            <div id="modal-creds"></div>
+            <div class="info-banner" style="margin-top:1rem;">
+                &#x1F512; Save these credentials — the password will not be shown again in plaintext.
+            </div>
+            <a href="#" id="modal-practice-btn" class="practice-btn" style="display:block;text-align:center;margin-top:1rem;"></a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}" data-username="{{ display_name | e }}"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Shared form-wiring helper ──────────────────────────────────────
+        function wireForm(opts) {
+            // opts: { dbType, usernameInputId, passwordInputId, confirmInputId,
+            //         uFeedbackId, pwStrTextId, pwStrBarId, pwConfirmId,
+            //         createBtnId, createErrorId, practiceUrl }
+            var usernameInput = document.getElementById(opts.usernameInputId);
+            var passwordInput = document.getElementById(opts.passwordInputId);
+            var confirmInput  = document.getElementById(opts.confirmInputId);
+            var createBtn     = document.getElementById(opts.createBtnId);
+            var uFeedback     = document.getElementById(opts.uFeedbackId);
+            var pwStrText     = document.getElementById(opts.pwStrTextId);
+            var pwStrBar      = document.getElementById(opts.pwStrBarId);
+            var pwConfirm     = document.getElementById(opts.pwConfirmId);
+            var createError   = document.getElementById(opts.createErrorId);
+
+            if (!usernameInput) return;  // section not present (DB already created)
+
+            var usernameOk = false;
+            var passwordOk = false;
+            var confirmOk  = false;
+            var checkTimeout;
+
+            function updateBtn() {
+                createBtn.disabled = !(usernameOk && passwordOk && confirmOk);
+            }
+
+            // Live username availability check (debounced 500 ms)
+            usernameInput.addEventListener('input', function () {
+                var val = this.value.trim();
+                uFeedback.className = 'username-feedback';
+                uFeedback.textContent = '';
+                usernameOk = false;
+                updateBtn();
+                clearTimeout(checkTimeout);
+                if (val.length < 3) return;
+                uFeedback.textContent = 'Checking…';
+                checkTimeout = setTimeout(function () {
+                    fetch('/api/check-username?username=' + encodeURIComponent(val) + '&db_type=' + opts.dbType)
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.available) {
+                                uFeedback.textContent = '✓ Username available';
+                                uFeedback.className = 'username-feedback ok';
+                                usernameOk = true;
+                            } else {
+                                uFeedback.textContent = '✗ Username taken or invalid';
+                                uFeedback.className = 'username-feedback err';
+                                usernameOk = false;
+                            }
+                            updateBtn();
+                        })
+                        .catch(function () { uFeedback.textContent = ''; });
+                }, 500);
+            });
+
+            // Password strength meter
+            passwordInput.addEventListener('input', function () {
+                var pw = this.value;
+                var strength = 0;
+                if (pw.length >= 8)       strength++;
+                if (/[A-Z]/.test(pw))     strength++;
+                if (/[0-9]/.test(pw))     strength++;
+                if (/[^A-Za-z0-9]/.test(pw)) strength++;
+                var labels = ['Too short','Weak','Fair','Good','Strong'];
+                var colors = ['#f87171','#f87171','#fb923c','#facc15','#4ade80'];
+                pwStrText.textContent = pw.length ? labels[strength] : '';
+                pwStrBar.style.width  = (strength * 25) + '%';
+                pwStrBar.style.background = colors[strength];
+                passwordOk = pw.length >= 8;
+                updateBtn();
+                if (confirmInput.value) confirmInput.dispatchEvent(new Event('input'));
+            });
+
+            confirmInput.addEventListener('input', function () {
+                if (this.value === passwordInput.value) {
+                    pwConfirm.textContent = '✓ Passwords match';
+                    pwConfirm.className = 'username-feedback ok';
+                    confirmOk = true;
+                } else {
+                    pwConfirm.textContent = '✗ Passwords do not match';
+                    pwConfirm.className = 'username-feedback err';
+                    confirmOk = false;
+                }
+                updateBtn();
+            });
+
+            createBtn.addEventListener('click', function () {
+                createBtn.disabled = true;
+                createBtn.textContent = 'Creating…';
+                createError.textContent = '';
+
+                fetch('/api/create-database', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        db_type:  opts.dbType,
+                        username: usernameInput.value.trim(),
+                        password: passwordInput.value,
+                    })
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.success) {
+                        var info = d.db_info;
+                        var pairs = [
+                            ['Type',     info.db_type],
+                            ['Database', info.db_name],
+                            ['Username', info.db_user],
+                            ['Host',     info.db_host],
+                            ['Port',     String(info.db_port)],
+                            ['Password', passwordInput.value],
+                        ];
+                        var container = document.getElementById('modal-creds');
+                        container.innerHTML = '';
+                        pairs.forEach(function (p) {
+                            var row   = document.createElement('div');
+                            row.className = 'cred-row';
+                            var label = document.createElement('span');
+                            label.textContent = p[0];
+                            var value = document.createElement('span');
+                            value.textContent = p[1];
+                            var btn = document.createElement('button');
+                            btn.className = 'copy-btn';
+                            btn.textContent = 'Copy';
+                            (function (v) {
+                                btn.addEventListener('click', function () {
+                                    navigator.clipboard.writeText(v);
+                                });
+                            })(p[1]);
+                            row.appendChild(label);
+                            row.appendChild(value);
+                            row.appendChild(btn);
+                            container.appendChild(row);
+                        });
+                        // Set the practice button URL based on DB type
+                        var pracBtn = document.getElementById('modal-practice-btn');
+                        if (opts.dbType === 'mysql') {
+                            pracBtn.href = '/editor/mysql';
+                            pracBtn.textContent = '▶ Practice MySQL';
+                            pracBtn.className = 'practice-btn mysql-btn';
+                        } else {
+                            pracBtn.href = '/editor/postgresql';
+                            pracBtn.textContent = '▶ Practice PostgreSQL';
+                            pracBtn.className = 'practice-btn postgres-btn';
+                        }
+                        document.getElementById('successModal').classList.add('show');
+                    } else {
+                        createError.textContent = d.error || 'Failed to create database.';
+                        createBtn.disabled = false;
+                        createBtn.textContent = opts.dbType === 'mysql'
+                            ? '🔧 Create MySQL Database'
+                            : '🔧 Create PostgreSQL Database';
+                    }
+                })
+                .catch(function () {
+                    createError.textContent = 'Network error. Please try again.';
+                    createBtn.disabled = false;
+                    createBtn.textContent = opts.dbType === 'mysql'
+                        ? '🔧 Create MySQL Database'
+                        : '🔧 Create PostgreSQL Database';
+                });
+            });
+        }
+
+        // Wire MySQL form
+        wireForm({
+            dbType: 'mysql',
+            usernameInputId:  'mysql-username',
+            passwordInputId:  'mysql-password',
+            confirmInputId:   'mysql-password-confirm',
+            uFeedbackId:      'mysql-username-feedback',
+            pwStrTextId:      'mysql-pw-strength-text',
+            pwStrBarId:       'mysql-pw-strength-bar',
+            pwConfirmId:      'mysql-pw-confirm-feedback',
+            createBtnId:      'mysql-btn-create',
+            createErrorId:    'mysql-create-error',
+        });
+
+        // Wire PostgreSQL form
+        wireForm({
+            dbType: 'postgres',
+            usernameInputId:  'pg-username',
+            passwordInputId:  'pg-password',
+            confirmInputId:   'pg-password-confirm',
+            uFeedbackId:      'pg-username-feedback',
+            pwStrTextId:      'pg-pw-strength-text',
+            pwStrBarId:       'pg-pw-strength-bar',
+            pwConfirmId:      'pg-pw-confirm-feedback',
+            createBtnId:      'pg-btn-create',
+            createErrorId:    'pg-create-error',
+        });
+    })();
+    </script>
+
+    {% include 'partials/creator_info_modal.html' %}
+    <script src="{{ url_for('static', filename='js/creator_info.js') }}"></script>
+</body>
+</html>

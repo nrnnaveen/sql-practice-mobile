@@ -1,0 +1,113 @@
+from flask import Blueprint, jsonify, redirect, render_template, request, session
+
+from app.services.auth_service import get_user_by_id
+from app.services.db_admin_service import (
+    create_user_database,
+    get_all_user_dbs,
+    get_user_db_info,
+    is_username_available,
+)
+from app.services.progress_service import get_all_progress
+from app.services.question_service import get_questions
+
+dashboard_bp = Blueprint("dashboard", __name__)
+
+# Question counts per difficulty level (used in dashboard template)
+_DIFFICULTY_TOTALS = {
+    diff: len(get_questions("mysql", diff))
+    for diff in ("beginner", "moderate", "master")
+}
+
+
+def _get_display_name(user, login_type):
+    """Derive a greeting name from profile data or email."""
+    name = user.get("name") or ""
+    parts = name.split()
+    if parts:
+        # Use first word of full name (e.g. "John Doe" → "John")
+        return parts[0]
+    # Fall back: extract part before @ from email
+    email = user.get("email", "")
+    local = email.split("@")[0] if "@" in email else email
+    return local.capitalize() if local else "there"
+
+
+@dashboard_bp.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = get_user_by_id(session["user_id"])
+    if not user:
+        session.clear()
+        return redirect("/login")
+
+    login_type = session.get("login_type", "email")
+    display_name = _get_display_name(user, login_type)
+
+    # Smart detection: check if user already has sandbox databases (per type)
+    all_dbs = get_all_user_dbs(session["user_id"])
+    mysql_db = all_dbs.get("mysql")
+    postgres_db = all_dbs.get("postgres")
+
+    # backward-compat: db_info = first available DB (mysql preferred)
+    db_info = mysql_db or postgres_db
+
+    # Practice progress for dashboard display
+    practice_progress = get_all_progress(session["user_id"])
+
+    return render_template(
+        "dashboard.html",
+        user=user,
+        display_name=display_name,
+        login_type=login_type,
+        db_info=db_info,
+        mysql_db=mysql_db,
+        postgres_db=postgres_db,
+        practice_progress=practice_progress,
+        difficulty_totals=_DIFFICULTY_TOTALS,
+    )
+
+
+@dashboard_bp.route("/api/check-username")
+def check_username():
+    """Return whether a custom DB username is available."""
+    if "user_id" not in session:
+        return jsonify({"available": False, "error": "Not authenticated"}), 401
+    username = request.args.get("username", "").strip()
+    db_type = request.args.get("db_type", "mysql").strip()
+    if not username:
+        return jsonify({"available": False, "error": "Username is required"})
+    available = is_username_available(db_type, username)
+    return jsonify({"available": available})
+
+
+@dashboard_bp.route("/api/create-database", methods=["POST"])
+def create_database():
+    """Create a per-user sandbox database (one per type per user)."""
+    if "user_id" not in session:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    user_id = session["user_id"]
+
+    data = request.get_json(silent=True) or {}
+    db_type = data.get("db_type", "mysql").strip()
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+
+    # Prevent duplicate creation for this specific db_type
+    if get_user_db_info(user_id, db_type) is not None:
+        return jsonify({"success": False, "error": f"You already have a {db_type} database."}), 409
+
+    if not username or not password:
+        return jsonify({"success": False, "error": "Username and password are required."}), 400
+
+    try:
+        info = create_user_database(user_id, db_type, username, password)
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+    return jsonify({"success": True, "db_info": info})
+

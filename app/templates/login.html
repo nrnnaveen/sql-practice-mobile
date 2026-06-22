@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Authentication Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-full.css') }}">
+</head>
+<body class="terminal-bg">
+    <canvas id="sql-canvas"></canvas>
+    <div class="scanlines"></div>
+    <div class="terminal-center">
+        <div id="boot-sequence" class="terminal-boot"></div>
+        <form id="login-form" class="terminal-card hidden" action="{{ url_for('auth.login') }}" method="post" autocomplete="off" novalidate data-dashboard-url="{{ url_for('dashboard.dashboard') }}">
+            <div class="terminal-title">&#x25A0; SQL AUTH TERMINAL</div>
+            {% if error %}
+            <div class="terminal-error">&#x25B6; {{ error }}</div>
+            {% endif %}
+            <label for="email" class="terminal-label">&#x25B6; EMAIL:</label>
+            <input type="email" id="email" name="email" class="terminal-input" placeholder="user@database.com" required autofocus>
+            <label for="password" class="terminal-label">&#x25B6; PASSWORD:</label>
+            <input type="password" id="password" name="password" class="terminal-input" placeholder="••••••••" required>
+            <button type="submit" class="terminal-button">EXECUTE QUERY</button>
+
+            <div class="terminal-divider">
+                <span>or</span>
+            </div>
+
+            <button
+                type="button"
+                class="google-btn"
+                id="google-login-btn"
+                onclick="googleLogin()"
+                aria-label="Sign in with Google"
+            >
+                <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                    <path fill="none" d="M0 0h48v48H0z"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <p class="terminal-signup-link">No account? <a href="{{ url_for('auth.signup') }}">CREATE USER</a></p>
+        </form>
+        <div id="sql-animation" class="terminal-query-area hidden"></div>
+    </div>
+    <script src="{{ url_for('static', filename='sql_animation.js') }}"></script>
+    <script>
+        function googleLogin() {
+            console.log('🔍 [Google Login] Starting authentication flow');
+            console.log('📱 [Google Login] Cordova detected:', typeof window.cordova !== 'undefined');
+            console.log('👤 [Google Login] User Agent:', navigator.userAgent);
+
+            var loginUrl = window.location.origin + "/login/google";
+
+            try {
+                if (typeof window.cordova !== 'undefined') {
+                    console.log('✅ [Google Login] Cordova environment – opening system browser');
+                    showToast('Opening Google login in system browser…', 'info');
+
+                    var ref = window.open(
+                        loginUrl,
+                        "_system",
+                        "location=yes,toolbar=yes,enableViewportScale=yes"
+                    );
+
+                    if (!ref) {
+                        console.error('❌ [Google Login] Failed to open system browser, falling back');
+                        showToast('Could not open browser. Retrying…', 'error');
+                        window.location.href = loginUrl;
+                    }
+                } else {
+                    console.log('🌐 [Google Login] Browser environment – standard navigation');
+                    window.location.href = loginUrl;
+                }
+            } catch (error) {
+                console.error('❌ [Google Login] Error:', error);
+                showToast('Authentication error. Please try again.', 'error');
+                window.location.href = loginUrl;
+            }
+        }
+
+        function showToast(message, type) {
+            type = type || 'info';
+            var toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = [
+                'position:fixed',
+                'bottom:20px',
+                'right:20px',
+                'padding:12px 20px',
+                'border-radius:6px',
+                'font-size:14px',
+                'z-index:10000',
+                'color:#fff',
+                'transition:opacity 0.3s ease'
+            ].join(';');
+
+            var colors = { success: '#4CAF50', error: '#f44336', info: '#2196F3' };
+            toast.style.background = colors[type] || colors.info;
+
+            document.body.appendChild(toast);
+            setTimeout(function () { toast.parentNode && toast.parentNode.removeChild(toast); }, 3000);
+        }
+    </script>
+</body>
+</html>

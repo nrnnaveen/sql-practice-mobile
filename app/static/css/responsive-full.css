@@ -1,0 +1,766 @@
+/* ==========================================================================
+   responsive-full.css  –  Comprehensive mobile-first responsive layout
+   Covers all breakpoints: 320px → 1920px+
+   Uses CSS custom properties, clamp(), min/max, flexbox, grid.
+   Loaded LAST so these rules win over component-level styles.
+   ========================================================================== */
+
+/* ── CSS Custom Properties for spacing/sizing ── */
+:root {
+  --sp-xs: clamp(0.25rem, 1vw, 0.5rem);
+  --sp-sm: clamp(0.5rem,  2vw, 0.75rem);
+  --sp-md: clamp(0.75rem, 3vw, 1rem);
+  --sp-lg: clamp(1rem,    4vw, 1.5rem);
+  --sp-xl: clamp(1.5rem,  5vw, 2.5rem);
+
+  /* Touch target minimum */
+  --touch-min: 44px;
+
+  /* Editor heights per breakpoint */
+  --editor-h-xs:    160px;
+  --editor-h-sm:    200px;
+  --editor-h-md:    260px;
+  --editor-h-lg:    340px;
+  --editor-h-xl:    420px;
+  --editor-h-2xl:   520px;
+}
+
+/* ==========================================================================
+   1. GLOBAL / BODY
+   ========================================================================== */
+
+/* Prevent horizontal overflow at page level */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Smooth momentum scrolling everywhere on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================================
+   2. TYPOGRAPHY SCALING
+   ========================================================================== */
+
+/* Base text scales from 14px on tiny phones to 16px on desktop */
+body {
+  font-size: clamp(14px, 2.5vw, 16px);
+}
+
+h2 {
+  font-size: clamp(1.15rem, 4vw, 1.5rem);
+}
+
+h3 {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+}
+
+h4 {
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+}
+
+/* ==========================================================================
+   3. TOUCH TARGETS  (min 44×44px on mobile)
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  button,
+  a.btn,
+  .btn,
+  .icon-btn,
+  .logout-btn,
+  .btn-run,
+  .btn-nav,
+  .btn-next,
+  .btn-secondary,
+  .hint-btn,
+  .sample-btn,
+  .practice-btn,
+  .tpl-use-btn,
+  .bm-load-btn,
+  .bm-del-btn,
+  .modal-close,
+  .profile-avatar-btn,
+  .copy-btn {
+    min-height: var(--touch-min);
+    min-width: var(--touch-min);
+  }
+
+  /* Inline-style overrides for small button variants */
+  .btn-sm {
+    min-height: 36px;
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+/* ==========================================================================
+   4. EDITOR PAGE LAYOUT
+   ========================================================================== */
+
+/* ── Small Mobile (320–374px) ── */
+@media (max-width: 374px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  .editor-header h2 {
+    font-size: 1rem;
+  }
+
+  .editor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .db-select {
+    width: 100%;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+  }
+
+  .toolbar-actions .btn {
+    justify-content: center;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.3rem;
+  }
+
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-xs) !important;
+  }
+
+  .run-bar {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .run-bar .btn-primary {
+    flex: 1 1 100%;
+  }
+
+  .run-bar .btn-danger {
+    flex: 1;
+  }
+
+  .shortcut-hint {
+    display: none;
+  }
+}
+
+/* ── Mobile (375–767px) ── */
+@media (min-width: 375px) and (max-width: 767px) {
+  .container {
+    padding: 0.75rem;
+  }
+
+  .editor-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .editor-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-sm) !important;
+  }
+
+  .shortcut-hint {
+    display: none;
+  }
+}
+
+/* ── Large Mobile / Small Tablet (414–767px) ── */
+@media (min-width: 414px) and (max-width: 767px) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-md) !important;
+  }
+}
+
+/* ── Tablet Portrait (768–1023px) ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-md) !important;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+
+  .shortcut-hint {
+    display: inline;
+  }
+}
+
+/* ── Tablet Landscape / Small Laptop (1024–1279px) ── */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-lg) !important;
+  }
+}
+
+/* ── Laptop (1280–1439px) ── */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-xl) !important;
+  }
+}
+
+/* ── Desktop (1440–1919px) ── */
+@media (min-width: 1440px) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: var(--editor-h-2xl) !important;
+  }
+}
+
+/* ==========================================================================
+   5. SQL RESULTS TABLE  (horizontal scroll, sticky headers)
+   ========================================================================== */
+
+/* Results table wrapper — always scrollable horizontally */
+.table-scroll,
+.wb-result-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Thin scrollbar on mobile */
+  scrollbar-width: thin;
+  /* Prevent the scroll area from consuming vertical space unnecessarily */
+  max-width: 100%;
+}
+
+.table-scroll::-webkit-scrollbar,
+.wb-result-table-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+/* Sticky table headers */
+.wb-result-table th,
+table thead th,
+table thead td {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface2, rgba(255,255,255,0.08));
+}
+
+/* On mobile: reduce cell padding and allow table to be narrower */
+@media (max-width: 767px) {
+  table {
+    font-size: 0.8rem;
+  }
+
+  th, td {
+    padding: 0.35rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  .wb-result-table th,
+  .wb-result-table td {
+    padding: 0.28rem 0.4rem;
+    font-size: 0.74rem;
+  }
+}
+
+/* ==========================================================================
+   6. EDITOR LAYOUT (sidebar / history panel)
+   ========================================================================== */
+
+/* Base: single column stack */
+.editor-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+/* Tablet (768px+): two-column grid */
+@media (min-width: 768px) {
+  .editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+    align-items: start;
+    gap: var(--sp-md);
+  }
+
+  .editor-main {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .editor-layout > .history-panel {
+    grid-column: 2;
+    position: sticky;
+    top: var(--sp-md);
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    order: unset;
+  }
+}
+
+/* Desktop (1024px+): wider sidebar */
+@media (min-width: 1024px) {
+  .editor-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
+
+/* Large desktop (1440px+): even wider sidebar */
+@media (min-width: 1440px) {
+  .editor-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+}
+
+/* History panel appears below editor on mobile */
+@media (max-width: 767px) {
+  .history-panel {
+    order: 5;
+  }
+}
+
+/* ==========================================================================
+   7. PRACTICE PAGE LAYOUT
+   ========================================================================== */
+
+/* Base: single column */
+.practice-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+/* Tablet (768px+): main + history sidebar */
+@media (min-width: 768px) {
+  .practice-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    align-items: start;
+    gap: var(--sp-md);
+  }
+
+  .practice-main {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .practice-layout > .history-panel {
+    grid-column: 2;
+    position: sticky;
+    top: var(--sp-md);
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    order: unset;
+  }
+}
+
+/* Desktop (1024px+): wider sidebar for practice */
+@media (min-width: 1024px) {
+  .practice-layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+
+/* ==========================================================================
+   8. DATABASE VISUALIZATION PANEL
+   ========================================================================== */
+
+/* Mobile: horizontally scrollable, no wrap */
+@media (max-width: 767px) {
+  .db-viz-container,
+  .db-viz-container.dbviz-wrapper {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .db-viz-container::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .dbviz-table {
+    flex-shrink: 0;
+    min-width: 115px !important;
+    max-width: 150px !important;
+    font-size: 0.72rem;
+  }
+
+  .dbviz-table-head {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .dbviz-col-row {
+    padding: 0.12rem 0.5rem;
+    font-size: 0.68rem;
+  }
+
+  /* Hide flying-row animations on mobile (performance + can overflow viewport) */
+  .flying-row {
+    display: none;
+  }
+}
+
+/* Tablet (768px+): wrap normally */
+@media (min-width: 768px) {
+  .db-viz-container,
+  .db-viz-container.dbviz-wrapper {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    overflow-y: visible;
+  }
+
+  .dbviz-table {
+    min-width: 140px;
+    max-width: 185px;
+  }
+}
+
+/* Desktop (1024px+): standard sizing */
+@media (min-width: 1024px) {
+  .dbviz-table {
+    min-width: 150px;
+    max-width: 200px;
+  }
+}
+
+/* ==========================================================================
+   9. MODALS  (centered, no cut-off on mobile)
+   ========================================================================== */
+
+.modal {
+  padding: var(--sp-sm);
+  align-items: flex-start;
+  padding-top: 5vh;
+}
+
+@media (max-width: 767px) {
+  .modal {
+    padding: 0.5rem;
+    padding-top: 2rem;
+    align-items: flex-start;
+  }
+
+  .modal-content,
+  .modal-wide {
+    max-width: 100% !important;
+    max-height: calc(100vh - 4rem);
+    width: 100%;
+    margin: 0;
+    border-radius: 10px 10px 0 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal {
+    align-items: center;
+    padding-top: 1rem;
+  }
+
+  .modal-content {
+    max-width: 500px;
+  }
+
+  .modal-wide {
+    max-width: 680px;
+  }
+}
+
+/* ==========================================================================
+   10. NAVIGATION / HEADER
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .editor-header {
+    gap: 0.4rem;
+  }
+
+  .editor-header h2 {
+    font-size: 1rem;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-actions {
+    flex-shrink: 0;
+  }
+
+  .icon-btn,
+  .logout-btn {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .dash-nav {
+    padding: 0.6rem 0.85rem;
+  }
+
+  .dash-nav-brand {
+    font-size: 0.95rem;
+  }
+}
+
+/* ==========================================================================
+   11. PRACTICE PAGE SPECIFIC
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .practice-header {
+    gap: 0.4rem;
+  }
+
+  .practice-header-left {
+    gap: 0.4rem;
+  }
+
+  .nav-bar {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-btns {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .congrats-card {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .btn-next {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
+
+  .question-text {
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  /* Cards internal padding on mobile */
+  .question-card,
+  .editor-card,
+  .result-card,
+  .history-panel {
+    padding: 0.85rem;
+  }
+}
+
+/* ==========================================================================
+   12. KEYBOARD / SOFT KEYBOARD HANDLING
+   ========================================================================== */
+
+/* When the virtual keyboard opens on mobile, prevent the editor from
+   being completely covered. Use dvh (dynamic viewport height) where supported,
+   falling back to vh. */
+@media (max-width: 767px) {
+  body {
+    min-height: 100dvh;
+    min-height: 100vh; /* fallback */
+  }
+
+  /* Allow the page to scroll past the editor when keyboard is open */
+  .editor-main,
+  .practice-main {
+    padding-bottom: env(keyboard-inset-height, 0px);
+  }
+}
+
+/* ==========================================================================
+   13. SCROLLING — no double-scroll traps
+   ========================================================================== */
+
+/* The main page scrolls the whole document. Child panels scroll independently. */
+.history-panel,
+.wb-result-table-wrap,
+.table-scroll,
+.modal-content,
+.modal-body {
+  overscroll-behavior: contain;
+}
+
+/* ==========================================================================
+   14. ORIENTATION — landscape adaptation
+   ========================================================================== */
+
+/* On phone landscape: shrink editor and viz panel */
+@media (max-width: 767px) and (orientation: landscape) {
+  .monaco-editor-box,
+  .monaco-box {
+    height: 140px !important;
+  }
+
+  .db-viz-container {
+    max-height: 100px;
+  }
+
+  .dash-main {
+    padding: 0.5rem;
+  }
+}
+
+/* ==========================================================================
+   15. TOOLBAR WRAPPING ON SMALL SCREENS
+   ========================================================================== */
+
+@media (max-width: 540px) {
+  .editor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+
+  .db-select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .toolbar-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 80px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ==========================================================================
+   16. DASHBOARD CARD RESPONSIVENESS
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .dash-card {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+  }
+
+  .dash-welcome {
+    font-size: clamp(1.3rem, 6vw, 1.6rem);
+  }
+
+  .dual-db-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .greeting-bubble {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    max-width: min(280px, 85vw);
+  }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .dash-card-wide {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* ==========================================================================
+   17. RUN BAR — wrap gracefully on small screens
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .run-bar {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .run-bar .btn-primary {
+    flex: 1 1 100%;
+  }
+
+  .run-bar .clear-btn {
+    flex: 1;
+  }
+
+  .run-bar .sample-btn,
+  .run-bar .shortcut-hint {
+    flex-basis: 100%;
+  }
+}
+
+/* ==========================================================================
+   18. FORM ELEMENTS — prevent iOS font zoom (16px minimum)
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* ==========================================================================
+   19. LARGE DESKTOP  (1920px+) — max content width
+   ========================================================================== */
+
+@media (min-width: 1920px) {
+  .container {
+    max-width: 1800px;
+    padding: 1.5rem 2rem;
+  }
+
+  .editor-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    max-width: 1800px;
+  }
+
+  .monaco-editor-box,
+  .monaco-box {
+    height: 600px !important;
+  }
+}
+
+/* ==========================================================================
+   20. PRINT / REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

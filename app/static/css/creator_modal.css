@@ -1,0 +1,307 @@
+/* ── Creator Info Floating Button ── */
+.creator-info-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  z-index: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: creator-pulse 2s infinite;
+}
+
+.creator-info-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
+}
+
+.creator-info-button:active {
+  transform: scale(0.95);
+}
+
+@keyframes creator-pulse {
+  0%   { box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4); }
+  50%  { box-shadow: 0 4px 25px rgba(33, 150, 243, 0.8); }
+  100% { box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4); }
+}
+
+@media (max-width: 768px) {
+  .creator-info-button {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+    bottom: 15px;
+    right: 15px;
+  }
+}
+
+/* ── Creator Modal Backdrop ── */
+.creator-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+}
+
+.creator-modal.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: creator-fade-in 0.3s ease-in-out;
+}
+
+/* ── Modal Content ── */
+.creator-modal-content {
+  background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: creator-slide-up 0.4s ease-out;
+  border: 1px solid #3d3d5c;
+}
+
+/* ── Modal Header ── */
+.creator-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.creator-modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.creator-modal .close-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.creator-modal .close-btn:hover {
+  color: #fff;
+}
+
+/* ── Profile Section ── */
+.creator-profile-section {
+  text-align: center;
+  padding: 1.5rem 1.25rem 1rem;
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: #fff;
+}
+
+.creator-profile-avatar {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.creator-profile-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.creator-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* ── Modal Body ── */
+.creator-modal-body {
+  padding: 1rem 1.25rem;
+}
+
+/* ── Contact Message ── */
+.creator-contact-message {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid #FFC107;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 1rem;
+}
+
+.creator-contact-message p {
+  margin: 0;
+  color: #FFC107;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* ── Contact Item ── */
+.creator-contact-item {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  text-decoration: none;
+}
+
+.creator-contact-item:hover {
+  background: rgba(33, 150, 243, 0.12);
+  border-color: #2196F3;
+  transform: translateX(4px);
+}
+
+.creator-contact-icon {
+  font-size: 1.3rem;
+  margin-right: 0.85rem;
+  flex-shrink: 0;
+}
+
+.creator-contact-content {
+  min-width: 0;
+}
+
+.creator-contact-label {
+  font-size: 0.7rem;
+  color: #999;
+  margin: 0 0 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.creator-contact-value {
+  font-size: 0.9rem;
+  color: #2196F3;
+  font-weight: 500;
+  word-break: break-all;
+  margin: 0;
+  text-decoration: none;
+}
+
+a.creator-contact-item .creator-contact-value {
+  color: #fff;
+}
+
+/* ── Social Section ── */
+.creator-social-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.creator-social-title {
+  font-size: 0.75rem;
+  color: #aaa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.75rem;
+}
+
+.creator-social-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  text-decoration: none;
+  color: #fff;
+  transition: background 0.2s ease, transform 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.creator-social-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.creator-social-link.instagram { border-left-color: #E4405F; }
+.creator-social-link.instagram:hover { background: rgba(228, 64, 95, 0.15); color: #E4405F; }
+
+.creator-social-link.github { border-left-color: #6e7681; }
+.creator-social-link.github:hover { background: rgba(110, 118, 129, 0.15); color: #c9d1d9; }
+
+.creator-social-link.linkedin { border-left-color: #0A66C2; }
+.creator-social-link.linkedin:hover { background: rgba(10, 102, 194, 0.15); color: #0A66C2; }
+
+.creator-social-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.creator-social-link span {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ── Modal Footer ── */
+.creator-modal-footer {
+  padding: 0.85rem 1.25rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 0 0 20px 20px;
+}
+
+.creator-app-version {
+  font-size: 0.75rem;
+  color: #999;
+  margin: 0.2rem 0;
+}
+
+.creator-last-updated {
+  font-size: 0.7rem;
+  color: #666;
+  margin: 0.2rem 0;
+}
+
+/* ── Animations ── */
+@keyframes creator-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes creator-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Mobile ── */
+@media (max-width: 520px) {
+  .creator-modal-content {
+    width: 96%;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .creator-profile-avatar { font-size: 3rem; }
+  .creator-profile-section h3 { font-size: 1.1rem; }
+}
